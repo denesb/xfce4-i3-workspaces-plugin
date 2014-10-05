@@ -1,0 +1,22 @@
+What's this file about?
+-----------------------
+This file lists all external people that have contributed to this project and
+thereby helped to make the sample project such a successful project.
+
+
+Translators (sorted by language):
+----------------------------------
+These people have translated the sample plugin to foreign languages.
+
+ John Doo <john@foo.org>
+ * be translations
+
+ Foo Bar <bar@foo.org>
+ * nl translations
+
+
+Other contributors (sorted by name):
+------------------------------------
+
+ Foo Bar <bar@foo.org>
+ * patches

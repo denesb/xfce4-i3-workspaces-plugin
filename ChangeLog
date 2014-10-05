@@ -1,0 +1,12 @@
+YYYY-MM-DD	John Doo <john@foo.org>
+
+	* === Released 0.0.1 ===
+	* configure.in.in, NEWS: Bump version.
+
+YYYY-MM-DD	John Doo <john@foo.org>
+
+	* panel-plugin/sample.c(sample_plugin_new): A short description
+	  of the change.
+	* panel-plugin/sample-dialogs.c(sample_plugin_about): A short
+	  description of the change.
+	* THANKS: Add missing translator credits.
