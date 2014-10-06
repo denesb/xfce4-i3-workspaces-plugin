@@ -1,6 +1,6 @@
 /*  $Id$
  *
- *  Copyright (C) 2012 John Doo <john@foo.org>
+ *  Copyright (C) 2014 Dénes Botond <dns.botond@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef __SAMPLE_H__
-#define __SAMPLE_H__
+#ifndef __PLUGIN_H__
+#define __PLUGIN_H__
 
 G_BEGIN_DECLS
 
@@ -28,23 +28,13 @@ typedef struct
     XfcePanelPlugin *plugin;
 
     /* panel widgets */
-    GtkWidget       *ebox;
     GtkWidget       *hvbox;
-    GtkWidget       *label;
-
-    /* sample settings */
-    gchar           *setting1;
-    gint             setting2;
-    gboolean         setting3;
 }
-SamplePlugin;
+i3WorkspacesPlugin;
 
-
-
-void
-sample_save (XfcePanelPlugin *plugin,
-             SamplePlugin    *sample);
+void i3_workspaces_save(XfcePanelPlugin *xfcePlugin, 
+                        i3WorkspacesPlugin *i3workspacesPlugin);
 
 G_END_DECLS
 
-#endif /* !__SAMPLE_H__ */
+#endif /* !__PLUGIN_H__ */
