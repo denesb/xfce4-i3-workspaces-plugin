@@ -35,7 +35,8 @@ libi3workspaces_la_LDFLAGS = \
 libi3workspaces_la_LIBADD = \
 	$(LIBXFCE4UTIL_LIBS) \
 	$(LIBXFCE4UI_LIBS) \
-	$(LIBXFCE4PANEL_LIBS)
+	$(LIBXFCE4PANEL_LIBS) \
+	$(LIBI3IPCGLIB_LIBS)
 
 #
 # Desktop file

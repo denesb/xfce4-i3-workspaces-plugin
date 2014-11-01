@@ -32,11 +32,6 @@
 #include "i3w-plugin.h"
 #include "i3wm-delegate.h"
 
-/* default settings */
-#define DEFAULT_SETTING1 NULL
-#define DEFAULT_SETTING2 1
-#define DEFAULT_SETTING3 FALSE
-
 /* prototypes */
 static void i3_workspaces_construct(XfcePanelPlugin *plugin);
 
