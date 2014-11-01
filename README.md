@@ -48,9 +48,9 @@ Dependencies
 * [i3ipc-glib](https://github.com/acrisci/i3ipc-glib "i3ipc-glib")
 
 *Note:*
-1. On binary distros you may have to install the -dev version of the required
++ On binary distros you may have to install the -dev version of the required
 packages
-2. For the compilation to work out of the box I had to install i3ipc-glib in
++ For the compilation to work out of the box I had to install i3ipc-glib in
 the /usr prefix too.
 
 Have fun!
