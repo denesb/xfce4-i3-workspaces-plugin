@@ -20,6 +20,8 @@
 #ifndef __PLUGIN_H__
 #define __PLUGIN_H__
 
+#include "i3wm-delegate.h"
+
 G_BEGIN_DECLS
 
 /* plugin structure */
@@ -30,6 +32,9 @@ typedef struct
     /* panel widgets */
     GtkWidget       *ebox;
     GtkWidget       *hvbox;
+    GtkWidget       **buttons;
+
+    i3windowManager *i3wm;
 }
 i3WorkspacesPlugin;
 

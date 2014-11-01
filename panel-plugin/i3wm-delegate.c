@@ -67,6 +67,9 @@ i3windowManager * i3wm_construct()
     i3wm->on_workspace_blurred = NULL;
     i3wm->on_workspace_focused = NULL;
 
+    i3wm->workspaceInitialized = FALSE;
+    i3wm->lastBlurredWorkspace = NULL;
+
     init_workspaces(i3wm);
     subscribe_to_events(i3wm);
 
@@ -91,24 +94,28 @@ i3workspace ** i3wm_get_workspaces(i3windowManager *i3wm)
     return i3wm->workspaces;
 }
 
-void i3wm_set_workspace_created_callback(i3windowManager *i3wm, i3wm_event_callback callback)
+void i3wm_set_workspace_created_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data)
 {
     i3wm->on_workspace_created = callback;
+    i3wm->on_workspace_created_data = data;
 }
 
-void i3wm_set_workspace_destroyed_callback(i3windowManager *i3wm, i3wm_event_callback callback)
+void i3wm_set_workspace_destroyed_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data)
 {
     i3wm->on_workspace_destroyed = callback;
+    i3wm->on_workspace_destroyed_data = data;
 }
 
-void i3wm_set_workspace_blurred_callback(i3windowManager *i3wm, i3wm_event_callback callback)
+void i3wm_set_workspace_blurred_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data)
 {
     i3wm->on_workspace_blurred = callback;
+    i3wm->on_workspace_focused_data = data;
 }
 
-void i3wm_set_workspace_focused_callback(i3windowManager *i3wm, i3wm_event_callback callback)
+void i3wm_set_workspace_focused_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data)
 {
     i3wm->on_workspace_focused = callback;
+    i3wm->on_workspace_blurred_data = data;
 }
 
 /*
@@ -170,7 +177,7 @@ void add_workspace(i3windowManager *i3wm, const gchar *const workspaceName)
          {
              i3workspace * workspace = create_workspace(workspaceReply);
              i3wm->workspaces[workspace->num] = workspace;
-             if (i3wm->on_workspace_created) i3wm->on_workspace_created(workspace);
+             if (i3wm->on_workspace_created) i3wm->on_workspace_created(workspace, i3wm->on_workspace_created_data);
          }
     }
 }
@@ -218,8 +225,8 @@ void on_focus_workspace(i3windowManager *i3wm, i3ipcCon *current, i3ipcCon *old)
     }
     else
     {
-        if (i3wm->on_workspace_blurred) i3wm->on_workspace_blurred(blurredWorkspace);
-        if (i3wm->on_workspace_focused) i3wm->on_workspace_focused(focusedWorkspace);
+        if (i3wm->on_workspace_blurred) i3wm->on_workspace_blurred(blurredWorkspace, i3wm->on_workspace_blurred_data);
+        if (i3wm->on_workspace_focused) i3wm->on_workspace_focused(focusedWorkspace, i3wm->on_workspace_focused_data);
     }
 }
 
@@ -234,7 +241,7 @@ void on_empty_workspace(i3windowManager *i3wm)
     g_printf("empty\n");
     i3workspace *workspace = i3wm->lastBlurredWorkspace;
 
-    if (i3wm->on_workspace_destroyed) i3wm->on_workspace_destroyed(workspace);
+    if (i3wm->on_workspace_destroyed) i3wm->on_workspace_destroyed(workspace, i3wm->on_workspace_destroyed_data);
 
     i3wm->workspaces[workspace->num] = NULL; 
     destroy_workspace(workspace);

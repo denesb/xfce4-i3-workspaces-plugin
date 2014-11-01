@@ -34,7 +34,7 @@ typedef struct _i3workspace
     gchar *output;
 } i3workspace;
 
-typedef void (*i3wm_event_callback) (i3workspace *workspace);
+typedef void (*i3wm_event_callback) (i3workspace *workspace, gpointer data);
 
 typedef struct _i3windowManager
 {
@@ -48,6 +48,11 @@ typedef struct _i3windowManager
     i3wm_event_callback on_workspace_destroyed;
     i3wm_event_callback on_workspace_blurred;
     i3wm_event_callback on_workspace_focused;
+
+    gpointer on_workspace_created_data;
+    gpointer on_workspace_destroyed_data;
+    gpointer on_workspace_focused_data;
+    gpointer on_workspace_blurred_data;
 }
 i3windowManager;
 
@@ -58,12 +63,12 @@ void i3wm_destruct();
 
 i3workspace ** i3wm_get_workspaces(i3windowManager *i3wm);
 
-void i3wm_set_workspace_created_callback(i3windowManager *i3wm, i3wm_event_callback callback);
+void i3wm_set_workspace_created_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data);
 
-void i3wm_set_workspace_destroyed_callback(i3windowManager *i3wm, i3wm_event_callback callback);
+void i3wm_set_workspace_destroyed_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data);
 
-void i3wm_set_workspace_blurred_callback(i3windowManager *i3wm, i3wm_event_callback callback);
+void i3wm_set_workspace_blurred_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data);
 
-void i3wm_set_workspace_focused_callback(i3windowManager *i3wm, i3wm_event_callback callback);
+void i3wm_set_workspace_focused_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data);
 
 #endif /* !__I3W_DELEGATE_H__ */
