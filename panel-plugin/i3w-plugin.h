@@ -28,6 +28,7 @@ typedef struct
     XfcePanelPlugin *plugin;
 
     /* panel widgets */
+    GtkWidget       *ebox;
     GtkWidget       *hvbox;
 }
 i3WorkspacesPlugin;

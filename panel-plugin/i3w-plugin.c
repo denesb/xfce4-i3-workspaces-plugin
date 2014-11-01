@@ -29,7 +29,8 @@
 #include <libxfce4panel/xfce-panel-plugin.h>
 #include <libxfce4panel/xfce-hvbox.h>
 
-#include "i3_workspaces.h"
+#include "i3w-plugin.h"
+#include "i3wm-delegate.h"
 
 /* default settings */
 #define DEFAULT_SETTING1 NULL
@@ -44,80 +45,12 @@ XFCE_PANEL_PLUGIN_REGISTER(i3_workspaces_construct);
 
 
 
-void i3_workspaces_save(XfcePanelPlugin *xfcePlugin,
-                        i3WorkspacesPlugin *i3workspacesPlugin);
+void i3_workspaces_save(XfcePanelPlugin *xfcePlugin, i3WorkspacesPlugin *i3workspacesPlugin)
 {
-    XfceRc *rc;
-    gchar  *file;
-
-    /* get the config file location */
-    file = xfce_panel_plugin_save_location (xfcePlugin, TRUE);
-
-    if (G_UNLIKELY (file == NULL))
-    {
-        DBG ("Failed to open config file");
-        return;
-    }
-
-    /* open the config file, read/write */
-    rc = xfce_rc_simple_open (file, FALSE);
-    g_free (file);
-
-    if (G_LIKELY (rc != NULL))
-    {
-        /* save the settings */
-        DBG(".");
-        if (i3workspacesPlugin->setting1)
-            xfce_rc_write_entry    (rc, "setting1", i3workspacesPlugin->setting1);
-
-        xfce_rc_write_int_entry  (rc, "setting2", i3workspacesPlugin->setting2);
-        xfce_rc_write_bool_entry (rc, "setting3", i3workspacesPlugin->setting3);
-
-        /* close the rc file */
-        xfce_rc_close (rc);
-    }
 }
 
 static void i3_workspaces_read (i3WorkspacesPlugin *i3_workspaces)
 {
-    XfceRc      *rc;
-    gchar       *file;
-    const gchar *value;
-
-    /* get the plugin config file location */
-    file = xfce_panel_plugin_save_location (i3_workspaces->plugin, TRUE);
-
-    if (G_LIKELY (file != NULL))
-    {
-        /* open the config file, readonly */
-        rc = xfce_rc_simple_open (file, TRUE);
-
-        /* cleanup */
-        g_free (file);
-
-        if (G_LIKELY (rc != NULL))
-        {
-            /* read the settings */
-            value = xfce_rc_read_entry (rc, "setting1", DEFAULT_SETTING1);
-            i3_workspaces->setting1 = g_strdup (value);
-
-            i3_workspaces->setting2 = xfce_rc_read_int_entry (rc, "setting2", DEFAULT_SETTING2);
-            i3_workspaces->setting3 = xfce_rc_read_bool_entry (rc, "setting3", DEFAULT_SETTING3);
-
-            /* cleanup */
-            xfce_rc_close (rc);
-
-            /* leave the function, everything went well */
-            return;
-        }
-    }
-
-    /* something went wrong, apply default values */
-    DBG ("Applying default settings");
-
-    i3_workspaces->setting1 = g_strdup (DEFAULT_SETTING1);
-    i3_workspaces->setting2 = DEFAULT_SETTING2;
-    i3_workspaces->setting3 = DEFAULT_SETTING3;
 }
 
 static i3WorkspacesPlugin * i3_workspaces_new (XfcePanelPlugin *plugin)
@@ -132,9 +65,6 @@ static i3WorkspacesPlugin * i3_workspaces_new (XfcePanelPlugin *plugin)
     /* pointer to plugin */
     i3_workspaces->plugin = plugin;
 
-    /* read the user settings */
-    i3_workspaces_read (i3_workspaces);
-
     /* get the current orientation */
     orientation = xfce_panel_plugin_get_orientation (plugin);
 
@@ -146,14 +76,22 @@ static i3WorkspacesPlugin * i3_workspaces_new (XfcePanelPlugin *plugin)
     gtk_widget_show (i3_workspaces->hvbox);
     gtk_container_add (GTK_CONTAINER (i3_workspaces->ebox), i3_workspaces->hvbox);
 
-    /* some i3_workspaces widgets */
-    label = gtk_label_new (_("Sample"));
-    gtk_widget_show (label);
-    gtk_box_pack_start (GTK_BOX (i3_workspaces->hvbox), label, FALSE, FALSE, 0);
+    i3windowManager *i3wm = i3wm_construct();
 
-    label = gtk_label_new (_("Plugin"));
-    gtk_widget_show (label);
-    gtk_box_pack_start (GTK_BOX (i3_workspaces->hvbox), label, FALSE, FALSE, 0);
+    i3workspace **workspaces = i3wm_get_workspaces(i3wm);
+
+    int i;
+    for (i = 1; i < I3_WORKSPACE_N; i++)
+    {
+        i3workspace *workspace = workspaces[i];
+        if (workspace)
+        {
+            GtkWidget * button = gtk_button_new_with_label(workspace->name);
+            gtk_button_set_use_underline(GTK_BUTTON(button), workspace->focused);
+            gtk_box_pack_start(GTK_BOX(i3_workspaces->hvbox), button, FALSE, FALSE, 10);
+            gtk_widget_show(button);
+        }
+    }
 
     return i3_workspaces;
 }
@@ -161,19 +99,8 @@ static i3WorkspacesPlugin * i3_workspaces_new (XfcePanelPlugin *plugin)
 static void i3_workspaces_free (XfcePanelPlugin *plugin,
                                 i3WorkspacesPlugin *i3_workspaces)
 {
-    GtkWidget *dialog;
-
-    /* check if the dialog is still open. if so, destroy it */
-    dialog = g_object_get_data (G_OBJECT (plugin), "dialog");
-    if (G_UNLIKELY (dialog != NULL))
-        gtk_widget_destroy (dialog);
-
     /* destroy the panel widgets */
     gtk_widget_destroy (i3_workspaces->hvbox);
-
-    /* cleanup the settings */
-    if (G_LIKELY (i3_workspaces->setting1 != NULL))
-        g_free (i3_workspaces->setting1);
 
     /* free the plugin structure */
     panel_slice_free (i3WorkspacesPlugin, i3_workspaces);
@@ -181,7 +108,7 @@ static void i3_workspaces_free (XfcePanelPlugin *plugin,
 
 static void i3_workspaces_orientation_changed (XfcePanelPlugin       *plugin,
                                                GtkOrientation        orientation,
-                                               i3WorkspacesPlugin    *i3workspaces)
+                                               i3WorkspacesPlugin    *i3_workspaces)
 {
     /* change the orienation of the box */
     xfce_hvbox_set_orientation (XFCE_HVBOX (i3_workspaces->hvbox), orientation);
@@ -211,9 +138,6 @@ static void i3_workspaces_construct (XfcePanelPlugin *plugin)
 {
     i3WorkspacesPlugin *i3_workspaces;
 
-    /* setup transation domain */
-    xfce_textdomain(GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR, "UTF-8");
-
     /* create the plugin */
     i3_workspaces = i3_workspaces_new (plugin);
 
@@ -235,14 +159,4 @@ static void i3_workspaces_construct (XfcePanelPlugin *plugin)
 
     g_signal_connect (G_OBJECT (plugin), "orientation-changed",
             G_CALLBACK (i3_workspaces_orientation_changed), i3_workspaces);
-
-    /* show the configure menu item and connect signal */
-    xfce_panel_plugin_menu_show_configure (plugin);
-    g_signal_connect (G_OBJECT (plugin), "configure-plugin",
-            G_CALLBACK (i3_workspaces_configure), i3_workspaces);
-
-    /* show the about menu item and connect signal */
-    xfce_panel_plugin_menu_show_about (plugin);
-    g_signal_connect (G_OBJECT (plugin), "about",
-            G_CALLBACK (i3_workspaces_about), NULL);
 }

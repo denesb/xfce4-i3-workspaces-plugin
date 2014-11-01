@@ -3,7 +3,6 @@ Type=X-XFCE-PanelPlugin
 Encoding=UTF-8
 _Name=i3 Workspaces Plugin
 _Comment=Workspaces plugin for managing i3 window manager workspaces
-Icon=xfce4-i3-workspaces-plugin
 X-XFCE-Module=sample
 X-XFCE-Internal=false
 X-XFCE-Unique=false

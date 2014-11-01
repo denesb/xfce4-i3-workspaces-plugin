@@ -22,6 +22,8 @@
 
 #define I3_WORKSPACE_N 11
 
+#include <i3ipc-glib/i3ipc-glib.h>
+
 typedef struct _i3workspace
 {
     gint num;
