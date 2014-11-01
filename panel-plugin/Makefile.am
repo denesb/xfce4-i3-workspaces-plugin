@@ -14,8 +14,10 @@ plugindir = \
 	$(libdir)/xfce4/panel/plugins
 
 libi3workspaces_la_SOURCES = \
-	i3-workspaces.c \
-	i3-workspaces.h
+	i3wm-delegate.c \
+	i3w-plugin.c \
+	i3wm-delegate.h \
+	i3w-plugin.h
 
 libi3workspaces_la_CFLAGS = \
 	$(LIBXFCE4UTIL_CFLAGS) \

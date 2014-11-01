@@ -1,27 +1,27 @@
 dnl $Id$
 dnl
-dnl xfce4-sample-plugin - A sample plugin for the Xfce panel
+dnl xfce4-i3-workspaces-plugin - A workspace plugin for the i3 window manager
 dnl
-dnl 2012 John Doo <john@foo.org>
+dnl 2014 Denes Botond <dns@gmail.com>
 dnl
 
 dnl ***************************
 dnl *** Version information ***
 dnl ***************************
-m4_define([sample_version_major], [0])
-m4_define([sample_version_minor], [0])
-m4_define([sample_version_micro], [2])
-m4_define([sample_version_nano],  []) dnl leave this empty to have no nano version
-m4_define([sample_version_build], [@REVISION@])
-m4_define([sample_version_tag], [git])
-m4_define([sample_version], [sample_version_major().sample_version_minor().sample_version_micro()ifelse(sample_version_nano(), [], [], [.sample_version_nano()])ifelse(sample_version_tag(), [git], [sample_version_tag()-sample_version_build()], [sample_version_tag()])])
+m4_define([plugin_version_major], [0])
+m4_define([plugin_version_minor], [0])
+m4_define([plugin_version_micro], [2])
+m4_define([plugin_version_nano],  []) dnl leave this empty to have no nano version
+m4_define([plugin_version_build], [@REVISION@])
+m4_define([plugin_version_tag], [git])
+m4_define([plugin_version], [plugin_version_major().plugin_version_minor().plugin_version_micro()ifelse(plugin_version_nano(), [], [], [.plugin_version_nano()])ifelse(plugin_version_tag(), [git], [plugin_version_tag()-plugin_version_build()], [plugin_version_tag()])])
 
 dnl ***************************
 dnl *** Initialize autoconf ***
 dnl ***************************
-AC_COPYRIGHT([Copyright (C) 2012
+AC_COPYRIGHT([Copyright (C) 2014
         The Xfce development team. All rights reserved.])
-AC_INIT([xfce4-sample-plugin], [sample_version], [http://bugzilla.xfce.org/], [xfce4-sample-plugin])
+AC_INIT([xfce4-i3-workspaces-plugin], [plugin_version], [https://github.com/denesb/xfce4-i3-workspaces-plugin/issues], [xfce4-i3-workspaces-plugin])
 AC_PREREQ([2.50])
 AC_REVISION([xfce4_panel_version_build])
 
@@ -80,6 +80,7 @@ XDT_CHECK_PACKAGE([GTK], [gtk+-2.0], [2.20.0])
 XDT_CHECK_PACKAGE([LIBXFCE4UI], [libxfce4ui-1], [4.8.0])
 XDT_CHECK_PACKAGE([LIBXFCE4UTIL], [libxfce4util-1.0], [4.8.0])
 XDT_CHECK_PACKAGE([LIBXFCE4PANEL], [libxfce4panel-1.0], [4.8.0])
+XDT_CHECK_PACKAGE([LIBXFCE4PANEL], [libi3ipc-glib-1.0], [1.0])
 
 dnl ***********************************
 dnl *** Check for debugging support ***
@@ -101,11 +102,7 @@ AC_SUBST([PLATFORM_LDFLAGS])
 
 AC_OUTPUT([
 Makefile
-icons/Makefile
-icons/48x48/Makefile
-icons/scalable/Makefile
 panel-plugin/Makefile
-po/Makefile.in
 ])
 
 dnl ***************************

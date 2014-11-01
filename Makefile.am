@@ -1,7 +1,5 @@
 SUBDIRS =	\
-	icons	\
-	panel-plugin \
-	po
+	panel-plugin
 
 distclean-local:
 	rm -rf *.cache *~
