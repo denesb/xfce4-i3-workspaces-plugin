@@ -46,6 +46,8 @@ desktopdir =								\
 desktop_DATA =								\
 	i3-workspaces.desktop
 
+@INTLTOOL_DESKTOP_RULE@
+
 EXTRA_DIST =								\
 	i3-workspaces.desktop.in
 
