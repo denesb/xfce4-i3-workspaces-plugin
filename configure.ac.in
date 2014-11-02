@@ -9,8 +9,8 @@ dnl ***************************
 dnl *** Version information ***
 dnl ***************************
 m4_define([plugin_version_major], [0])
-m4_define([plugin_version_minor], [0])
-m4_define([plugin_version_micro], [2])
+m4_define([plugin_version_minor], [2])
+m4_define([plugin_version_micro], [0])
 m4_define([plugin_version_nano],  []) dnl leave this empty to have no nano version
 m4_define([plugin_version_build], [@REVISION@])
 m4_define([plugin_version_tag], [git])
