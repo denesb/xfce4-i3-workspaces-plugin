@@ -31,6 +31,10 @@
 
 #include "i3w-plugin.h"
 
+static const gchar * LABEL_MARKUP = "<span fgcolor=\"#%s\" bgcolor=\"#073642\">%s</span>";
+static const gchar * FGC_FOCUSED = "cb4b16";
+static const gchar * FGC_BLURRED = "839496";
+
 /* prototypes */
 static void i3_workspaces_construct(XfcePanelPlugin *plugin);
 
@@ -176,8 +180,15 @@ static void i3_add_workspaces(i3WorkspacesPlugin *i3_workspaces)
         i3workspace *workspace = workspaces[i];
         if (workspace)
         {
-            GtkWidget * button = gtk_button_new_with_label(workspace->name);
-            gtk_button_set_use_underline(GTK_BUTTON(button), workspace->focused);
+            GtkWidget *label = gtk_label_new(NULL);
+            const gchar * fgcolor = workspace->focused ? FGC_FOCUSED : FGC_BLURRED;
+            const gchar * markup = g_markup_printf_escaped (LABEL_MARKUP, fgcolor, workspace->name);
+            gtk_label_set_markup(GTK_LABEL(label), markup);
+            gtk_widget_show(label);
+
+            //GtkWidget * button = gtk_button_new_with_label(workspace->name);
+            GtkWidget * button = gtk_button_new();
+            gtk_container_add(GTK_CONTAINER(button), label);
             gtk_box_pack_start(GTK_BOX(i3_workspaces->hvbox), button, FALSE, FALSE, 0);
             gtk_widget_show(button);
             i3_workspaces->buttons[workspace->num] = button;
@@ -204,10 +215,23 @@ static void i3_on_workspace_destroyed (i3workspace *workspace, gpointer data)
 static void i3_on_workspace_blurred (i3workspace *workspace, gpointer data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
+
+    GtkWidget *button = i3_workspaces->buttons[workspace->num];
+
+    GtkWidget *label = gtk_bin_get_child(GTK_BIN(button));
+    const gchar * markup = g_markup_printf_escaped (LABEL_MARKUP, FGC_BLURRED, workspace->name);
+    gtk_label_set_markup(GTK_LABEL(label), markup);
+
 }
 
 static void i3_on_workspace_focused (i3workspace *workspace, gpointer data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
+
+    GtkWidget *button = i3_workspaces->buttons[workspace->num];
+
+    GtkWidget *label = gtk_bin_get_child(GTK_BIN(button));
+    const gchar * markup = g_markup_printf_escaped (LABEL_MARKUP, FGC_FOCUSED, workspace->name);
+    gtk_label_set_markup(GTK_LABEL(label), markup);
 }
 
