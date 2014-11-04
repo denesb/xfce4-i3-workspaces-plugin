@@ -168,6 +168,7 @@ static void i3_remove_workspaces(i3WorkspacesPlugin *i3_workspaces)
     {
         GtkWidget * button = i3_workspaces->buttons[i];
         if (button) gtk_widget_destroy(button);
+        i3_workspaces->buttons[i] = NULL;
     }
 }
 
@@ -180,13 +181,13 @@ static void i3_add_workspaces(i3WorkspacesPlugin *i3_workspaces)
         i3workspace *workspace = workspaces[i];
         if (workspace)
         {
+            g_printf("DEBUG[add] %s[%i] %i\n", workspace->name, workspace->num, workspace->focused);
             GtkWidget *label = gtk_label_new(NULL);
             const gchar * fgcolor = workspace->focused ? FGC_FOCUSED : FGC_BLURRED;
             const gchar * markup = g_markup_printf_escaped (LABEL_MARKUP, fgcolor, workspace->name);
             gtk_label_set_markup(GTK_LABEL(label), markup);
             gtk_widget_show(label);
 
-            //GtkWidget * button = gtk_button_new_with_label(workspace->name);
             GtkWidget * button = gtk_button_new();
             gtk_container_add(GTK_CONTAINER(button), label);
             gtk_box_pack_start(GTK_BOX(i3_workspaces->hvbox), button, FALSE, FALSE, 0);
@@ -198,6 +199,7 @@ static void i3_add_workspaces(i3WorkspacesPlugin *i3_workspaces)
 
 static void i3_on_workspace_created (i3workspace *workspace, gpointer data)
 {
+    g_printf("on_create %i\n", workspace->num);
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
 
     i3_remove_workspaces(i3_workspaces);
@@ -206,6 +208,7 @@ static void i3_on_workspace_created (i3workspace *workspace, gpointer data)
 
 static void i3_on_workspace_destroyed (i3workspace *workspace, gpointer data)
 {
+    g_printf("on_destroy %i\n", workspace->num);
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
 
     gtk_widget_destroy(i3_workspaces->buttons[workspace->num]);
@@ -214,6 +217,7 @@ static void i3_on_workspace_destroyed (i3workspace *workspace, gpointer data)
 
 static void i3_on_workspace_blurred (i3workspace *workspace, gpointer data)
 {
+    g_printf("on_blurr %i\n", workspace->num);
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
 
     GtkWidget *button = i3_workspaces->buttons[workspace->num];
@@ -226,6 +230,7 @@ static void i3_on_workspace_blurred (i3workspace *workspace, gpointer data)
 
 static void i3_on_workspace_focused (i3workspace *workspace, gpointer data)
 {
+    g_printf("on_focus %i\n", workspace->num);
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
 
     GtkWidget *button = i3_workspaces->buttons[workspace->num];
