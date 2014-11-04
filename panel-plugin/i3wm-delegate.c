@@ -212,7 +212,6 @@ void on_focus_workspace(i3windowManager *i3wm, i3ipcCon *current, i3ipcCon *old)
 {
     const gchar *const blurredName = i3ipc_con_get_name(old);
     const gchar *const focusedName = i3ipc_con_get_name(current);
-    g_printf("focus %s -> %s\n", blurredName, focusedName);
 
     i3workspace * blurredWorkspace = lookup_workspace(i3wm, blurredName);
     blurredWorkspace->focused = FALSE;
@@ -234,13 +233,11 @@ void on_focus_workspace(i3windowManager *i3wm, i3ipcCon *current, i3ipcCon *old)
 
 void on_init_workspace(i3windowManager *i3wm)
 {
-    g_printf("init\n");
     i3wm->workspaceInitialized = TRUE;
 }
 
 void on_empty_workspace(i3windowManager *i3wm)
 {
-    g_printf("empty\n");
     i3workspace *workspace = i3wm->lastBlurredWorkspace;
 
     if (i3wm->on_workspace_destroyed) i3wm->on_workspace_destroyed(workspace, i3wm->on_workspace_destroyed_data);
@@ -252,6 +249,5 @@ void on_empty_workspace(i3windowManager *i3wm)
 
 void on_urgent_workspace(i3windowManager *i3wm)
 {
-    g_printf("urgent\n");
     //TODO
 }
