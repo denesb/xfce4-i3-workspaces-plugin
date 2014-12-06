@@ -27,3 +27,35 @@
 *.i*86
 *.x86_64
 *.hex
+
+# Autotools generated files
+compile
+configure.ac
+depcomp
+install-sh
+intltool-extract.in
+intltool-merge.in
+intltool-update.in
+libtool
+ltmain.sh
+missing
+panel-plugin/.libs/
+panel-plugin/i3-workspaces.desktop
+po/.intltool-merge-cache
+po/POTFILES
+po/stamp-it
+Makefile
+Makefile.in
+aclocal.m4
+autom4te.cache/
+config.*
+/configure
+/m4/
+/stamp-h?
+.deps/
+.dirstamp
+*.o
+*~
+
+# Vim temporary files
+*.swp
