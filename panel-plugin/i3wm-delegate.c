@@ -218,6 +218,8 @@ void on_focus_workspace(i3windowManager *i3wm, i3ipcCon *current, i3ipcCon *old)
 
     i3wm->lastBlurredWorkspace = blurredWorkspace;
 
+    blurredWorkspace->focused = 0;
+
     if (i3wm->workspaceInitialized)
     {
         add_workspace(i3wm, focusedName);
@@ -225,6 +227,7 @@ void on_focus_workspace(i3windowManager *i3wm, i3ipcCon *current, i3ipcCon *old)
     }
     else
     {
+        focusedWorkspace->focused = 1;
         if (i3wm->on_workspace_blurred) i3wm->on_workspace_blurred(blurredWorkspace, i3wm->on_workspace_blurred_data);
         if (i3wm->on_workspace_focused) i3wm->on_workspace_focused(focusedWorkspace, i3wm->on_workspace_focused_data);
     }
