@@ -176,8 +176,28 @@ static void i3_add_workspaces(i3WorkspacesPlugin *i3_workspaces)
         i3workspace *workspace = workspaces[i];
         if (workspace)
         {
-            GtkWidget * button = gtk_button_new_with_label(workspace->name);
-            gtk_button_set_use_underline(GTK_BUTTON(button), workspace->focused);
+            GtkWidget * button;
+
+            button = gtk_button_new_with_label(workspace->name);
+
+            /* if focused, bold the text on the button; otherwise use regular boldness */
+            if (workspace->focused)
+            {
+                gchar * label_str;
+                GList * list;
+
+                label_str = (gchar *) calloc(strlen(workspace->name) + 8, sizeof(gchar));
+                strcpy(label_str, "<b>");
+                strcat(label_str, workspace->name);
+                strcat(label_str, "</b>");
+
+                list = gtk_container_get_children(GTK_CONTAINER(button));
+                gtk_label_set_markup(GTK_LABEL(list->data), label_str);
+
+                free(label_str);
+            }
+
+            gtk_button_set_use_underline(GTK_BUTTON(button), FALSE); /* avoid acceleration key interference */
             gtk_box_pack_start(GTK_BOX(i3_workspaces->hvbox), button, FALSE, FALSE, 0);
             gtk_widget_show(button);
             i3_workspaces->buttons[workspace->num] = button;
@@ -209,5 +229,8 @@ static void i3_on_workspace_blurred (i3workspace *workspace, gpointer data)
 static void i3_on_workspace_focused (i3workspace *workspace, gpointer data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
+
+    i3_remove_workspaces(i3_workspaces);
+    i3_add_workspaces(i3_workspaces);
 }
 
