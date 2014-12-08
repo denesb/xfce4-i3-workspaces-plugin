@@ -45,6 +45,8 @@ static void i3_on_workspace_focused (i3workspace *workspace, gpointer data);
 static void i3_add_workspaces(i3WorkspacesPlugin *i3_workspaces);
 static void i3_remove_workspaces(i3WorkspacesPlugin *i3_workspaces);
 
+static void i3_focused_button (GtkWidget *button, gchar *name);
+static void i3_blurred_button (GtkWidget *button, gchar *name);
 
 void i3_workspaces_save(XfcePanelPlugin *xfcePlugin, i3WorkspacesPlugin *i3workspacesPlugin)
 {
@@ -163,6 +165,7 @@ static void i3_remove_workspaces(i3WorkspacesPlugin *i3_workspaces)
     for (i = 1; i < I3_WORKSPACE_N; i++)
     {
         GtkWidget * button = i3_workspaces->buttons[i];
+
         if (button)
         {
             gtk_widget_destroy(button);
@@ -187,18 +190,7 @@ static void i3_add_workspaces(i3WorkspacesPlugin *i3_workspaces)
             /* if focused, bold the text on the button; otherwise use regular boldness */
             if (workspace->focused)
             {
-                gchar * label_str;
-                GtkWidget * label;
-
-                label_str = (gchar *) calloc(strlen(workspace->name) + 8, sizeof(gchar));
-                strcpy(label_str, "<b>");
-                strcat(label_str, workspace->name);
-                strcat(label_str, "</b>");
-
-                label = gtk_bin_get_child(GTK_BIN(button));
-                gtk_label_set_markup(GTK_LABEL(label), label_str);
-
-                free(label_str);
+                i3_focused_button (button, workspace->name);
             }
 
             gtk_button_set_use_underline(GTK_BUTTON(button), FALSE); /* avoid acceleration key interference */
@@ -228,6 +220,9 @@ static void i3_on_workspace_destroyed (i3workspace *workspace, gpointer data)
 static void i3_on_workspace_blurred (i3workspace *workspace, gpointer data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
+
+    GtkWidget *button = i3_workspaces->buttons[workspace->num];
+    i3_blurred_button(button, workspace->name);
 }
 
 static void i3_on_workspace_focused (i3workspace *workspace, gpointer data)
@@ -236,5 +231,29 @@ static void i3_on_workspace_focused (i3workspace *workspace, gpointer data)
 
     i3_remove_workspaces(i3_workspaces);
     i3_add_workspaces(i3_workspaces);
+}
+
+static void i3_focused_button (GtkWidget *button, gchar *name)
+{
+    gchar * label_str;
+    GtkWidget * label;
+
+    label_str = (gchar *) calloc(strlen(name) + 8, sizeof(gchar));
+    strcpy(label_str, "<b>");
+    strcat(label_str, name);
+    strcat(label_str, "</b>");
+
+    label = gtk_bin_get_child(GTK_BIN(button));
+    gtk_label_set_markup(GTK_LABEL(label), label_str);
+
+    free(label_str);
+}
+
+static void i3_blurred_button (GtkWidget *button, gchar *name)
+{
+    GtkWidget * label;
+
+    label = gtk_bin_get_child(GTK_BIN(button));
+    gtk_label_set_markup(GTK_LABEL(label), name);
 }
 

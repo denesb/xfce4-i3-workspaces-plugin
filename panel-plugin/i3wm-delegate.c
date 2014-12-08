@@ -177,7 +177,8 @@ void add_workspace(i3windowManager *i3wm, const gchar *const workspaceName)
          {
              i3workspace * workspace = create_workspace(workspaceReply);
              i3wm->workspaces[workspace->num] = workspace;
-             if (i3wm->on_workspace_created) i3wm->on_workspace_created(workspace, i3wm->on_workspace_created_data);
+             if (i3wm->on_workspace_created)
+                 i3wm->on_workspace_created(workspace, i3wm->on_workspace_created_data);
          }
     }
 }
@@ -211,11 +212,11 @@ void on_focus_workspace(i3windowManager *i3wm, i3ipcCon *current, i3ipcCon *old)
 {
     const gchar *const blurredName = i3ipc_con_get_name(old);
     const gchar *const focusedName = i3ipc_con_get_name(current);
-    g_printf("focus %s -> %s\n", blurredName, focusedName);
 
     i3workspace * blurredWorkspace = lookup_workspace(i3wm, blurredName);
-    i3workspace * focusedWorkspace = lookup_workspace(i3wm, focusedName);
-
+    blurredWorkspace->focused = FALSE;
+    if (i3wm->on_workspace_blurred)
+        i3wm->on_workspace_blurred(blurredWorkspace, i3wm->on_workspace_blurred_data);
     i3wm->lastBlurredWorkspace = blurredWorkspace;
 
     blurredWorkspace->focused = 0;
@@ -225,23 +226,20 @@ void on_focus_workspace(i3windowManager *i3wm, i3ipcCon *current, i3ipcCon *old)
         add_workspace(i3wm, focusedName);
         i3wm->workspaceInitialized = FALSE;
     }
-    else
-    {
-        focusedWorkspace->focused = 1;
-        if (i3wm->on_workspace_blurred) i3wm->on_workspace_blurred(blurredWorkspace, i3wm->on_workspace_blurred_data);
-        if (i3wm->on_workspace_focused) i3wm->on_workspace_focused(focusedWorkspace, i3wm->on_workspace_focused_data);
-    }
+
+    i3workspace * focusedWorkspace = lookup_workspace(i3wm, focusedName);
+    focusedWorkspace->focused = TRUE;
+    if (i3wm->on_workspace_focused)
+        i3wm->on_workspace_focused(focusedWorkspace, i3wm->on_workspace_focused_data);
 }
 
 void on_init_workspace(i3windowManager *i3wm)
 {
-    g_printf("init\n");
     i3wm->workspaceInitialized = TRUE;
 }
 
 void on_empty_workspace(i3windowManager *i3wm)
 {
-    g_printf("empty\n");
     i3workspace *workspace = i3wm->lastBlurredWorkspace;
 
     if (i3wm->on_workspace_destroyed) i3wm->on_workspace_destroyed(workspace, i3wm->on_workspace_destroyed_data);
@@ -253,6 +251,5 @@ void on_empty_workspace(i3windowManager *i3wm)
 
 void on_urgent_workspace(i3windowManager *i3wm)
 {
-    g_printf("urgent\n");
     //TODO
 }
