@@ -4,20 +4,25 @@ xfce4-i3-workspaces-plugin
 A workspace switcher plugin for xfce4-panel which can be used for the i3 window 
 manager.
 
-At the moment the plugin compiles (on my machine :) ) and it shows the currently
-active workspaces.
+At the moment the latest release is 0.4.
+
+Development
+-----------
+
+Development is done on the *develop* branch, so that is where you will find the latest development version.
+The *master* branch only contains stable versions.
+
 
 Roadmap
 -------
 
-0.2 - the currently active workspaces are shown
+[x] 0.2 - the currently active workspaces are shown
 
-0.4 - the workspace buttons show the actually selected (focused) workspace
+[x] 0.4 - the workspace buttons show the actually selected (focused) workspace
 
-0.8 - when clicking on a workspace button the window manager jumps to the 
-      workspace
+[ ] 0.8 - when clicking on a workspace button the window manager jumps to the workspace
 
-1.0 - urgent workspaces implemented
+[ ] 1.0 - urgent workspaces implemented
 
 If you found a bug please report it in the [issue tracker](https://github.com/denesb/xfce4-i3-workspaces-plugin/issues "Bugs")
 
@@ -30,9 +35,9 @@ git clone https://github.com/denesb/xfce4-i3-workspaces-plugin.git
 
 cd xfce4-i3-workspaces-plugin
 
-./autogen.sh --prefix=/usr
-make
-sudo make install
+* ./autogen.sh --prefix=/usr
+* make
+* sudo make install
 
 *Note:*
 The --prefix=/usr is needed because if installed in /usr/local prefix the
