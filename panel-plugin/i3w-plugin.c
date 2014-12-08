@@ -167,8 +167,12 @@ static void i3_remove_workspaces(i3WorkspacesPlugin *i3_workspaces)
     for (i = 1; i < I3_WORKSPACE_N; i++)
     {
         GtkWidget * button = i3_workspaces->buttons[i];
-        if (button) gtk_widget_destroy(button);
-        i3_workspaces->buttons[i] = NULL;
+
+        if (button)
+        {
+            gtk_widget_destroy(button);
+            i3_workspaces->buttons[i] = NULL;
+        }
     }
 }
 

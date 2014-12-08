@@ -1,12 +1,59 @@
-YYYY-MM-DD	John Doo <john@foo.org>
+commit fb563d5aeb47f7185231d3d732019eb4184c5f2b
+Author: Denes Botond <dns.botond@gmail.com>
+Date:   Sat Nov 1 18:06:03 2014 +0200
 
-	* === Released 0.0.1 ===
-	* configure.in.in, NEWS: Bump version.
+    The create/destroy workspace events are working
 
-YYYY-MM-DD	John Doo <john@foo.org>
+commit 2504846a5f7da41f40d47b13a502a231ef05f04e
+Author: Denes Botond <dns.botond@gmail.com>
+Date:   Sat Nov 1 17:18:44 2014 +0200
 
-	* panel-plugin/sample.c(sample_plugin_new): A short description
-	  of the change.
-	* panel-plugin/sample-dialogs.c(sample_plugin_about): A short
-	  description of the change.
-	* THANKS: Add missing translator credits.
+    The plugin appears on the panel
+
+commit 5e60f14b7a1c87d74c0fdc47de66410e5a130564
+Author: Denes Botond <dns.botond@gmail.com>
+Date:   Sat Nov 1 15:29:11 2014 +0200
+
+    The project successfully builds now
+
+commit fe75d6cb8a0d02a58fa3e1fbbdd816ddf5288c13
+Author: Denes Botond <dns.botond@gmail.com>
+Date:   Sat Nov 1 15:13:57 2014 +0200
+
+    Code now compiles, but there is a problem with the missing i18n
+
+commit 395b64214c46c2af06360f4ea4790600bac11534
+Author: Denes Botond <dns.botond@gmail.com>
+Date:   Sat Nov 1 14:01:09 2014 +0200
+
+    Some further cleanup, seems like it's working
+
+commit 85e4937e211cd0b892f0072746606077573b8cc5
+Author: Denes Botond <dns.botond@gmail.com>
+Date:   Sat Nov 1 13:56:21 2014 +0200
+
+    Some cleanup in the autofoo files
+
+commit f93b29b3828581fe57212b7c87da6f074c7a69ac
+Author: Denes Botond <dns.botond@gmail.com>
+Date:   Tue Oct 7 21:36:15 2014 +0300
+
+    Started to restructure the code
+
+commit a7df0814e531d732ed060c9feeb7e7f89ebe6f28
+Author: Denes Botond <dns.botond@gmail.com>
+Date:   Mon Oct 6 19:46:24 2014 +0300
+
+    Made some restructuring. I don't like the current structure
+
+commit 2adf3231b6fe2b25a02a2ee581be1d439501c3c6
+Author: Denes Botond <dns.botond@gmail.com>
+Date:   Sun Oct 5 15:56:33 2014 +0300
+
+    Initial (messy) commit
+
+commit b0ccbf36eec347ee8cf5da1a42941eeb0077fd26
+Author: Denes Botond <dns.botond@gmail.com>
+Date:   Sun Oct 5 15:40:44 2014 +0300
+
+    Initial commit
