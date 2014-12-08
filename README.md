@@ -31,10 +31,8 @@ If you want to contact me drop me a line at dns.botond at gmail dot com
 Building
 --------
 
-git clone https://github.com/denesb/xfce4-i3-workspaces-plugin.git
-
-cd xfce4-i3-workspaces-plugin
-
+* git clone https://github.com/denesb/xfce4-i3-workspaces-plugin.git
+* cd xfce4-i3-workspaces-plugin
 * ./autogen.sh --prefix=/usr
 * make
 * sudo make install
