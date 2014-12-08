@@ -188,15 +188,15 @@ static void i3_add_workspaces(i3WorkspacesPlugin *i3_workspaces)
             if (workspace->focused)
             {
                 gchar * label_str;
-                GList * list;
+                GtkWidget * label;
 
                 label_str = (gchar *) calloc(strlen(workspace->name) + 8, sizeof(gchar));
                 strcpy(label_str, "<b>");
                 strcat(label_str, workspace->name);
                 strcat(label_str, "</b>");
 
-                list = gtk_container_get_children(GTK_CONTAINER(button));
-                gtk_label_set_markup(GTK_LABEL(list->data), label_str);
+                label = gtk_bin_get_child(GTK_BIN(button));
+                gtk_label_set_markup(GTK_LABEL(label), label_str);
 
                 free(label_str);
             }
