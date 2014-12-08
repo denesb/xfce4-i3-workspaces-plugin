@@ -192,6 +192,10 @@ static void i3_add_workspaces(i3WorkspacesPlugin *i3_workspaces)
             {
                 i3_focused_button (button, workspace->name);
             }
+            else
+            {
+                i3_blurred_button (button, workspace->name);
+            }
 
             gtk_button_set_use_underline(GTK_BUTTON(button), FALSE); /* avoid acceleration key interference */
             gtk_box_pack_start(GTK_BOX(i3_workspaces->hvbox), button, FALSE, FALSE, 0);
@@ -229,8 +233,8 @@ static void i3_on_workspace_focused (i3workspace *workspace, gpointer data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
 
-    i3_remove_workspaces(i3_workspaces);
-    i3_add_workspaces(i3_workspaces);
+    GtkWidget *button = i3_workspaces->buttons[workspace->num];
+    i3_focused_button(button, workspace->name);
 }
 
 static void i3_focused_button (GtkWidget *button, gchar *name)

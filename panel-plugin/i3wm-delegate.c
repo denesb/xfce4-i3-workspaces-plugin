@@ -214,12 +214,14 @@ void on_focus_workspace(i3windowManager *i3wm, i3ipcCon *current, i3ipcCon *old)
     const gchar *const focusedName = i3ipc_con_get_name(current);
 
     i3workspace * blurredWorkspace = lookup_workspace(i3wm, blurredName);
-    blurredWorkspace->focused = FALSE;
-    if (i3wm->on_workspace_blurred)
-        i3wm->on_workspace_blurred(blurredWorkspace, i3wm->on_workspace_blurred_data);
-    i3wm->lastBlurredWorkspace = blurredWorkspace;
-
-    blurredWorkspace->focused = 0;
+    if (blurredWorkspace) // this will be NULL in case of the scratch workspace
+    {
+        blurredWorkspace->focused = FALSE;
+        if (i3wm->on_workspace_blurred)
+            i3wm->on_workspace_blurred(blurredWorkspace, i3wm->on_workspace_blurred_data);
+        i3wm->lastBlurredWorkspace = blurredWorkspace;
+        blurredWorkspace->focused = FALSE;
+    }
 
     if (i3wm->workspaceInitialized)
     {
