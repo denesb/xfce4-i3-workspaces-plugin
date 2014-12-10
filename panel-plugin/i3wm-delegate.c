@@ -118,6 +118,24 @@ void i3wm_set_workspace_focused_callback(i3windowManager *i3wm, i3wm_event_callb
     i3wm->on_workspace_blurred_data = data;
 }
 
+void i3wm_goto_workspace(i3windowManager *i3wm, gint workspace_num)
+{
+    size_t cmd_size = 13 * sizeof(gchar);
+    gchar *command_str = (gchar *) malloc(cmd_size);
+    memset(command_str, 0, cmd_size);
+    snprintf(command_str, cmd_size - 1, "workspace %i", workspace_num);
+
+    GError **err = NULL;
+
+    gchar *reply = i3ipc_connection_message(
+            i3wm->connection,
+            I3IPC_MESSAGE_TYPE_COMMAND,
+            command_str,
+            err);
+
+    g_printf("%s\n", reply);
+}
+
 /*
  * Implementations of private functions
  */

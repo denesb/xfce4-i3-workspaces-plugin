@@ -71,4 +71,6 @@ void i3wm_set_workspace_blurred_callback(i3windowManager *i3wm, i3wm_event_callb
 
 void i3wm_set_workspace_focused_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data);
 
+void i3wm_goto_workspace(i3windowManager *i3wm, gint workspace_num);
+
 #endif /* !__I3W_DELEGATE_H__ */

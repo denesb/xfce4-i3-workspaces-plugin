@@ -48,6 +48,10 @@ static void i3_remove_workspaces(i3WorkspacesPlugin *i3_workspaces);
 static void i3_focused_button (GtkWidget *button, gchar *name);
 static void i3_blurred_button (GtkWidget *button, gchar *name);
 
+static void i3_on_workspace_clicked (GtkWidget *button, gpointer data);
+
+/* Implementations */
+
 void i3_workspaces_save(XfcePanelPlugin *xfcePlugin, i3WorkspacesPlugin *i3workspacesPlugin)
 {
 }
@@ -83,7 +87,6 @@ static i3WorkspacesPlugin * i3_workspaces_new (XfcePanelPlugin *plugin)
 
     i3_workspaces->buttons = (GtkWidget **) g_malloc0(sizeof(GtkWidget *) * I3_WORKSPACE_N);
 
-
     i3wm_set_workspace_created_callback(i3_workspaces->i3wm, i3_on_workspace_created, i3_workspaces);
     i3wm_set_workspace_destroyed_callback(i3_workspaces->i3wm, i3_on_workspace_destroyed, i3_workspaces);
     i3wm_set_workspace_focused_callback(i3_workspaces->i3wm, i3_on_workspace_focused, i3_workspaces);
@@ -112,10 +115,10 @@ static void i3_workspaces_orientation_changed (XfcePanelPlugin       *plugin,
     xfce_hvbox_set_orientation (XFCE_HVBOX (i3_workspaces->hvbox), orientation);
 }
 
-    static gboolean
-i3_workspaces_size_changed (XfcePanelPlugin *plugin,
-        gint             size,
-        i3WorkspacesPlugin    *i3_workspaces)
+static gboolean
+i3_workspaces_size_changed (XfcePanelPlugin       *plugin,
+                            gint                  size,
+                            i3WorkspacesPlugin    *i3_workspaces)
 {
     GtkOrientation orientation;
 
@@ -184,7 +187,6 @@ static void i3_add_workspaces(i3WorkspacesPlugin *i3_workspaces)
         if (workspace)
         {
             GtkWidget * button;
-
             button = gtk_button_new_with_label(workspace->name);
 
             /* if focused, bold the text on the button; otherwise use regular boldness */
@@ -196,6 +198,8 @@ static void i3_add_workspaces(i3WorkspacesPlugin *i3_workspaces)
             {
                 i3_blurred_button (button, workspace->name);
             }
+
+            g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(i3_on_workspace_clicked), i3_workspaces);
 
             gtk_button_set_use_underline(GTK_BUTTON(button), FALSE); /* avoid acceleration key interference */
             gtk_box_pack_start(GTK_BOX(i3_workspaces->hvbox), button, FALSE, FALSE, 0);
@@ -261,3 +265,20 @@ static void i3_blurred_button (GtkWidget *button, gchar *name)
     gtk_label_set_markup(GTK_LABEL(label), name);
 }
 
+static void i3_on_workspace_clicked (GtkWidget *button, gpointer data)
+{
+    i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *)data;
+
+    gint button_index = 0;
+    gint i;
+    for (i = 1; i < I3_WORKSPACE_N; i++)
+    {
+        if (i3_workspaces->buttons[i] == button)
+        {
+            button_index = i;
+            break;
+        }
+    }
+    g_printf("Click %i\n", button_index);
+    i3wm_goto_workspace(i3_workspaces->i3wm, button_index);
+}
