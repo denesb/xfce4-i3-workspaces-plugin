@@ -123,7 +123,7 @@ void i3wm_goto_workspace(i3windowManager *i3wm, gint workspace_num)
     size_t cmd_size = 13 * sizeof(gchar);
     gchar *command_str = (gchar *) malloc(cmd_size);
     memset(command_str, 0, cmd_size);
-    snprintf(command_str, cmd_size - 1, "workspace %i", workspace_num);
+    sprintf(command_str, "workspace %i", workspace_num);
 
     GError **err = NULL;
 
@@ -132,7 +132,6 @@ void i3wm_goto_workspace(i3windowManager *i3wm, gint workspace_num)
             I3IPC_MESSAGE_TYPE_COMMAND,
             command_str,
             err);
-
     g_printf("%s\n", reply);
 }
 
