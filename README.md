@@ -4,7 +4,8 @@ xfce4-i3-workspaces-plugin
 A workspace switcher plugin for xfce4-panel which can be used for the i3 window 
 manager.
 
-At the moment the latest release is 0.4.
+At the moment the latest release is 0.8.
+See the [releases](https://github.com/denesb/xfce4-i3-workspaces-plugin/releases) page.
 
 Development
 -----------
@@ -20,7 +21,7 @@ Roadmap
 
 [x] 0.4 - the workspace buttons show the actually selected (focused) workspace
 
-[ ] 0.8 - when clicking on a workspace button the window manager jumps to the workspace
+[x] 0.8 - when clicking on a workspace button the window manager jumps to the workspace
 
 [ ] 1.0 - urgent workspaces implemented
 
