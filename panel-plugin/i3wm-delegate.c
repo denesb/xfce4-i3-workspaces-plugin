@@ -20,6 +20,7 @@
 #include <gtk/gtk.h>
 #include <glib/gprintf.h>
 #include <i3ipc-glib/i3ipc-glib.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "i3wm-delegate.h"
