@@ -38,9 +38,6 @@ typedef struct
 }
 i3WorkspacesPlugin;
 
-void i3_workspaces_save(XfcePanelPlugin *xfcePlugin, 
-                        i3WorkspacesPlugin *i3workspacesPlugin);
-
 G_END_DECLS
 
 #endif /* !__PLUGIN_H__ */
