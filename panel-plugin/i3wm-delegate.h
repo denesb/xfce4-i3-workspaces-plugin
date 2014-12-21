@@ -28,10 +28,8 @@ typedef struct _i3workspace
 {
     gint num;
     gchar *name;
-    gboolean visible;
     gboolean focused;
     gboolean urgent;
-    gchar *output;
 } i3workspace;
 
 typedef void (*i3wm_event_callback) (i3workspace *workspace, gpointer data);
@@ -41,18 +39,17 @@ typedef struct _i3windowManager
     i3ipcConnection *connection;
     i3workspace **workspaces;
 
-    gboolean workspaceInitialized;
-    i3workspace *lastBlurredWorkspace;
-
     i3wm_event_callback on_workspace_created;
     i3wm_event_callback on_workspace_destroyed;
     i3wm_event_callback on_workspace_blurred;
     i3wm_event_callback on_workspace_focused;
+    i3wm_event_callback on_workspace_urgent;
 
     gpointer on_workspace_created_data;
     gpointer on_workspace_destroyed_data;
-    gpointer on_workspace_focused_data;
     gpointer on_workspace_blurred_data;
+    gpointer on_workspace_focused_data;
+    gpointer on_workspace_urgent_data;
 }
 i3windowManager;
 
@@ -70,6 +67,8 @@ void i3wm_set_workspace_destroyed_callback(i3windowManager *i3wm, i3wm_event_cal
 void i3wm_set_workspace_blurred_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data);
 
 void i3wm_set_workspace_focused_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data);
+
+void i3wm_set_workspace_urgent_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data);
 
 void i3wm_goto_workspace(i3windowManager *i3wm, gint workspace_num);
 

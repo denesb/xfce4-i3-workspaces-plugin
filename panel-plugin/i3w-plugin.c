@@ -41,12 +41,12 @@ static void i3_on_workspace_created (i3workspace *workspace, gpointer data);
 static void i3_on_workspace_destroyed (i3workspace *workspace, gpointer data);
 static void i3_on_workspace_blurred (i3workspace *workspace, gpointer data);
 static void i3_on_workspace_focused (i3workspace *workspace, gpointer data);
+static void i3_on_workspace_urgent (i3workspace *workspace, gpointer data);
 
 static void i3_add_workspaces(i3WorkspacesPlugin *i3_workspaces);
 static void i3_remove_workspaces(i3WorkspacesPlugin *i3_workspaces);
 
-static void i3_focused_button (GtkWidget *button, gchar *name);
-static void i3_blurred_button (GtkWidget *button, gchar *name);
+static void i3_set_button_label(GtkWidget *button, gchar *name, gboolean focused, gboolean urgent);
 
 static void i3_on_workspace_clicked (GtkWidget *button, gpointer data);
 
@@ -89,8 +89,9 @@ static i3WorkspacesPlugin * i3_workspaces_new (XfcePanelPlugin *plugin)
 
     i3wm_set_workspace_created_callback(i3_workspaces->i3wm, i3_on_workspace_created, i3_workspaces);
     i3wm_set_workspace_destroyed_callback(i3_workspaces->i3wm, i3_on_workspace_destroyed, i3_workspaces);
-    i3wm_set_workspace_focused_callback(i3_workspaces->i3wm, i3_on_workspace_focused, i3_workspaces);
     i3wm_set_workspace_blurred_callback(i3_workspaces->i3wm, i3_on_workspace_blurred, i3_workspaces);
+    i3wm_set_workspace_focused_callback(i3_workspaces->i3wm, i3_on_workspace_focused, i3_workspaces);
+    i3wm_set_workspace_urgent_callback(i3_workspaces->i3wm, i3_on_workspace_urgent, i3_workspaces);
 
     i3_add_workspaces(i3_workspaces);
 
@@ -189,15 +190,7 @@ static void i3_add_workspaces(i3WorkspacesPlugin *i3_workspaces)
             GtkWidget * button;
             button = gtk_button_new_with_label(workspace->name);
 
-            /* if focused, bold the text on the button; otherwise use regular boldness */
-            if (workspace->focused)
-            {
-                i3_focused_button (button, workspace->name);
-            }
-            else
-            {
-                i3_blurred_button (button, workspace->name);
-            }
+            i3_set_button_label(button, workspace->name, workspace->focused, workspace->urgent);
 
             g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(i3_on_workspace_clicked), i3_workspaces);
 
@@ -230,39 +223,47 @@ static void i3_on_workspace_blurred (i3workspace *workspace, gpointer data)
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
 
     GtkWidget *button = i3_workspaces->buttons[workspace->num];
-    i3_blurred_button(button, workspace->name);
+    i3_set_button_label(button, workspace->name, workspace->focused, workspace->urgent);
 }
 
 static void i3_on_workspace_focused (i3workspace *workspace, gpointer data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
 
+    workspace->urgent = FALSE; // reset the urgent flag
     GtkWidget *button = i3_workspaces->buttons[workspace->num];
-    i3_focused_button(button, workspace->name);
+    i3_set_button_label(button, workspace->name, workspace->focused, workspace->urgent);
 }
 
-static void i3_focused_button (GtkWidget *button, gchar *name)
+static void i3_on_workspace_urgent (i3workspace *workspace, gpointer data)
 {
-    gchar * label_str;
-    GtkWidget * label;
+    i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
 
-    label_str = (gchar *) calloc(strlen(name) + 8, sizeof(gchar));
-    strcpy(label_str, "<b>");
-    strcat(label_str, name);
-    strcat(label_str, "</b>");
+    GtkWidget *button = i3_workspaces->buttons[workspace->num];
+    i3_set_button_label(button, workspace->name, workspace->focused, workspace->urgent);
+}
 
-    label = gtk_bin_get_child(GTK_BIN(button));
+static void i3_set_button_label(GtkWidget *button, gchar *name, gboolean focused, gboolean urgent)
+{
+    static gchar * template = "<span foreground=\"%s\" weight=\"%s\">%s</span>";
+    static gchar * focused_weight = "bold";
+    static gchar * blurred_weight = "normal";
+    static gchar * urgent_color = "red";
+    static gchar * normal_color = "black";
+
+    // allocate space for the maximum possible size of the label
+    gulong maxlen = strlen(name) + 50;
+    gchar *label_str = (gchar *) calloc(maxlen, sizeof(gchar));
+
+    g_snprintf(label_str, maxlen, template,
+            urgent ? urgent_color : normal_color,
+            focused ? focused_weight : blurred_weight,
+            name);
+
+    GtkWidget * label = gtk_bin_get_child(GTK_BIN(button));
     gtk_label_set_markup(GTK_LABEL(label), label_str);
 
     free(label_str);
-}
-
-static void i3_blurred_button (GtkWidget *button, gchar *name)
-{
-    GtkWidget * label;
-
-    label = gtk_bin_get_child(GTK_BIN(button));
-    gtk_label_set_markup(GTK_LABEL(label), name);
 }
 
 static void i3_on_workspace_clicked (GtkWidget *button, gpointer data)
@@ -279,6 +280,5 @@ static void i3_on_workspace_clicked (GtkWidget *button, gpointer data)
             break;
         }
     }
-    g_printf("Click %i\n", button_index);
     i3wm_goto_workspace(i3_workspaces->i3wm, button_index);
 }

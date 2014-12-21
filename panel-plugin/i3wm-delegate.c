@@ -32,7 +32,6 @@ static void init_workspaces(i3windowManager *i3wm);
 static i3workspace * create_workspace(i3ipcWorkspaceReply * workspaceReply);
 static void destroy_workspace(i3workspace * workspace);
 static void subscribe_to_events(i3windowManager *i3w);
-static void add_workspace(i3windowManager *i3w, const gchar *const workspaceName);
 static i3workspace * lookup_workspace(i3windowManager *i3w, const gchar *const workspaceName);
 
 /*
@@ -67,9 +66,6 @@ i3windowManager * i3wm_construct()
     i3wm->on_workspace_destroyed = NULL;
     i3wm->on_workspace_blurred = NULL;
     i3wm->on_workspace_focused = NULL;
-
-    i3wm->workspaceInitialized = FALSE;
-    i3wm->lastBlurredWorkspace = NULL;
 
     init_workspaces(i3wm);
     subscribe_to_events(i3wm);
@@ -119,6 +115,13 @@ void i3wm_set_workspace_focused_callback(i3windowManager *i3wm, i3wm_event_callb
     i3wm->on_workspace_blurred_data = data;
 }
 
+void i3wm_set_workspace_urgent_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data)
+{
+    i3wm->on_workspace_urgent = callback;
+    i3wm->on_workspace_urgent_data = data;
+}
+
+
 void i3wm_goto_workspace(i3windowManager *i3wm, gint workspace_num)
 {
     size_t cmd_size = 13 * sizeof(gchar);
@@ -146,10 +149,8 @@ i3workspace * create_workspace(i3ipcWorkspaceReply * workspaceReply)
 
     workspace->num = workspaceReply->num;
     workspace->name = g_strdup(workspaceReply->name);
-    workspace->visible = workspaceReply->visible;
     workspace->focused = workspaceReply->focused;
     workspace->urgent = workspaceReply->urgent;
-    workspace->output = NULL; // Not supported yet
 
     return workspace;
 }
@@ -183,24 +184,14 @@ void subscribe_to_events(i3windowManager *i3wm)
     g_signal_connect_after(i3wm->connection, "workspace", G_CALLBACK(on_workspace_event), i3wm);
 }
 
-void add_workspace(i3windowManager *i3wm, const gchar *const workspaceName)
-{
-    GError **err = NULL;
-    GSList *workspacesList = i3ipc_connection_get_workspaces(i3wm->connection, err);
-    GSList *listItem;
-    for (listItem = workspacesList; listItem != NULL; listItem = listItem->next)
-    {
-         i3ipcWorkspaceReply * workspaceReply = (i3ipcWorkspaceReply *) listItem->data;
-         if (NULL == i3wm->workspaces[workspaceReply->num])
-         {
-             i3workspace * workspace = create_workspace(workspaceReply);
-             i3wm->workspaces[workspace->num] = workspace;
-             if (i3wm->on_workspace_created)
-                 i3wm->on_workspace_created(workspace, i3wm->on_workspace_created_data);
-         }
-    }
-}
-
+/**
+ * lookup_workspace:
+ * @i3wm - the window manager delegate struct
+ * @workspaceName - the name of the workspace to be looked up
+ *
+ * Lookup a workspace struct by its name.
+ * Returns: an i3workspace*
+ */
 i3workspace * lookup_workspace(i3windowManager *i3wm, const gchar *const workspaceName)
 {
     i3workspace *the_workspace = NULL;
@@ -231,20 +222,14 @@ void on_focus_workspace(i3windowManager *i3wm, i3ipcCon *current, i3ipcCon *old)
     const gchar *const blurredName = i3ipc_con_get_name(old);
     const gchar *const focusedName = i3ipc_con_get_name(current);
 
+    g_printf("focus %s -> %s\n", blurredName, focusedName);
+
     i3workspace * blurredWorkspace = lookup_workspace(i3wm, blurredName);
     if (blurredWorkspace) // this will be NULL in case of the scratch workspace
     {
         blurredWorkspace->focused = FALSE;
         if (i3wm->on_workspace_blurred)
             i3wm->on_workspace_blurred(blurredWorkspace, i3wm->on_workspace_blurred_data);
-        i3wm->lastBlurredWorkspace = blurredWorkspace;
-        blurredWorkspace->focused = FALSE;
-    }
-
-    if (i3wm->workspaceInitialized)
-    {
-        add_workspace(i3wm, focusedName);
-        i3wm->workspaceInitialized = FALSE;
     }
 
     i3workspace * focusedWorkspace = lookup_workspace(i3wm, focusedName);
@@ -253,23 +238,89 @@ void on_focus_workspace(i3windowManager *i3wm, i3ipcCon *current, i3ipcCon *old)
         i3wm->on_workspace_focused(focusedWorkspace, i3wm->on_workspace_focused_data);
 }
 
+/**
+ * on_init_workspace:
+ * @i3wm - the window manager delegate struct
+ *
+ * Init workspace event handler
+ */
 void on_init_workspace(i3windowManager *i3wm)
 {
-    i3wm->workspaceInitialized = TRUE;
+    g_printf("init\n");
+    GError **err = NULL;
+    GSList *workspacesList = i3ipc_connection_get_workspaces(i3wm->connection, err);
+    GSList *listItem;
+    for (listItem = workspacesList; listItem != NULL; listItem = listItem->next)
+    {
+        i3ipcWorkspaceReply * workspaceReply = (i3ipcWorkspaceReply *) listItem->data;
+        if (NULL == i3wm->workspaces[workspaceReply->num])
+        {
+            i3workspace *workspace = create_workspace(workspaceReply);
+            i3wm->workspaces[workspace->num] = workspace;
+
+            if (i3wm->on_workspace_created)
+                i3wm->on_workspace_created(workspace, i3wm->on_workspace_created_data);
+        }
+    }
 }
 
+/**
+ * on_empty_workspace:
+ * @i3wm - the window manager delegate struct
+ *
+ * Empty workspace event handler
+ */
 void on_empty_workspace(i3windowManager *i3wm)
 {
-    i3workspace *workspace = i3wm->lastBlurredWorkspace;
+    g_printf("empty\n");
+    i3workspace *workspace = NULL;
 
-    if (i3wm->on_workspace_destroyed) i3wm->on_workspace_destroyed(workspace, i3wm->on_workspace_destroyed_data);
+    i3ipcWorkspaceReply *workspaceReplies[I3_WORKSPACE_N];
+    memset(workspaceReplies, 0, I3_WORKSPACE_N * sizeof(i3ipcWorkspaceReply *));
 
-    i3wm->workspaces[workspace->num] = NULL; 
-    destroy_workspace(workspace);
-    i3wm->lastBlurredWorkspace = NULL;
+    // get the updated worksace list from the window manager
+    GError **err = NULL;
+    GSList *workspacesList = i3ipc_connection_get_workspaces(i3wm->connection, err);
+    GSList *listItem;
+    for (listItem = workspacesList; listItem != NULL; listItem = listItem->next)
+    {
+        i3ipcWorkspaceReply * workspaceReply = (i3ipcWorkspaceReply *) listItem->data;
+        workspaceReplies[workspaceReply->num] = workspaceReply;
+    }
+
+    // find the removed workspace
+    int i;
+    for (i = 1; i < I3_WORKSPACE_N; i++)
+    {
+        if (i3wm->workspaces[i] && NULL == workspaceReplies[i])
+        {
+            if (i3wm->on_workspace_destroyed)
+                i3wm->on_workspace_destroyed(i3wm->workspaces[i], i3wm->on_workspace_destroyed_data);
+
+            destroy_workspace(i3wm->workspaces[i]);
+            i3wm->workspaces[i] = NULL; // remove the workspace
+            break;
+        }
+    }
 }
 
 void on_urgent_workspace(i3windowManager *i3wm)
 {
-    //TODO
+    g_printf("urgent\n");
+
+    // get the updated worksace list from the window manager
+    GError **err = NULL;
+    GSList *workspacesList = i3ipc_connection_get_workspaces(i3wm->connection, err);
+    GSList *listItem;
+    for (listItem = workspacesList; listItem != NULL; listItem = listItem->next)
+    {
+        i3ipcWorkspaceReply * workspaceReply = (i3ipcWorkspaceReply *) listItem->data;
+        if (workspaceReply->urgent)
+        {
+            i3workspace *workspace = i3wm->workspaces[workspaceReply->num];
+            workspace->urgent = TRUE;
+            if (i3wm->on_workspace_urgent)
+                i3wm->on_workspace_urgent(workspace, i3wm->on_workspace_urgent_data);
+        }
+    }
 }
