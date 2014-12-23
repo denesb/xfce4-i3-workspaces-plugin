@@ -84,7 +84,7 @@ i3windowManager * i3wm_construct()
  */
 void i3wm_destruct(i3windowManager *i3wm)
 {
-    g_free(i3wm->connection);
+    g_object_unref(i3wm->connection);
 
     int i;
     for (i = 0; i < I3_WORKSPACE_N; i++)
@@ -198,6 +198,8 @@ void i3wm_goto_workspace(i3windowManager *i3wm, gint workspace_num)
             I3IPC_MESSAGE_TYPE_COMMAND,
             command_str,
             err);
+
+    g_free(reply);
 }
 
 /*
@@ -253,6 +255,8 @@ void init_workspaces(i3windowManager *i3wm)
         i3workspace * workspace = create_workspace((i3ipcWorkspaceReply *) listItem->data);
         i3wm->workspaces[workspace->num] = workspace;
     }
+
+    g_slist_free_full(workspacesList, (GDestroyNotify)i3ipc_workspace_reply_free);
 }
 
 /**
@@ -269,6 +273,8 @@ void subscribe_to_events(i3windowManager *i3wm)
     reply = i3ipc_connection_subscribe(i3wm->connection, I3IPC_EVENT_WORKSPACE, err);
 
     g_signal_connect_after(i3wm->connection, "workspace", G_CALLBACK(on_workspace_event), i3wm);
+
+    i3ipc_command_reply_free(reply);
 }
 
 /**
@@ -362,6 +368,8 @@ void on_init_workspace(i3windowManager *i3wm)
                 i3wm->on_workspace_created(workspace, i3wm->on_workspace_created_data);
         }
     }
+
+    g_slist_free_full(workspacesList, (GDestroyNotify)i3ipc_workspace_reply_free);
 }
 
 /**
@@ -401,6 +409,8 @@ void on_empty_workspace(i3windowManager *i3wm)
             break;
         }
     }
+
+    g_slist_free_full(workspacesList, (GDestroyNotify)i3ipc_workspace_reply_free);
 }
 
 /**
@@ -426,4 +436,6 @@ void on_urgent_workspace(i3windowManager *i3wm)
                 i3wm->on_workspace_urgent(workspace, i3wm->on_workspace_urgent_data);
         }
     }
+
+    g_slist_free_full(workspacesList, (GDestroyNotify)i3ipc_workspace_reply_free);
 }
