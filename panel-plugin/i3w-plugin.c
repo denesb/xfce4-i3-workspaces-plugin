@@ -71,6 +71,10 @@ static i3WorkspacesPlugin * i3_workspaces_new (XfcePanelPlugin *plugin)
     /* pointer to plugin */
     i3_workspaces->plugin = plugin;
 
+    /* plugin options */
+    i3_workspaces->options = i3_workspaces_options_new();
+    i3_workspaces_options_load(i3_workspaces->options, plugin);
+
     /* get the current orientation */
     orientation = xfce_panel_plugin_get_orientation (plugin);
 
@@ -107,6 +111,10 @@ static i3WorkspacesPlugin * i3_workspaces_new (XfcePanelPlugin *plugin)
 static void i3_workspaces_free (XfcePanelPlugin *plugin,
                                 i3WorkspacesPlugin *i3_workspaces)
 {
+    /* save options */
+    i3_workspaces_options_save(i3_workspaces->options, plugin);
+    i3_workspaces_options_free(i3_workspaces->options);
+
     /* destroy the panel widgets */
     gtk_widget_destroy (i3_workspaces->hvbox);
 

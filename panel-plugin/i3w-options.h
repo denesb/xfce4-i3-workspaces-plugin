@@ -16,30 +16,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __PLUGIN_H__
-#define __PLUGIN_H__
+#ifndef I3W_OPTIONS_H
+#define I3W_OPTIONS_H
 
-#include "i3wm-delegate.h"
-#include "i3w-options.h"
+#include <glib.h>
+#include <libxfce4panel/xfce-panel-plugin.h>
 
-G_BEGIN_DECLS
-
-/* plugin structure */
 typedef struct
 {
-    XfcePanelPlugin *plugin;
-
-    /* panel widgets */
-    GtkWidget       *ebox;
-    GtkWidget       *hvbox;
-    GtkWidget       **buttons;
-
-    i3WorkspacesOptions *options;
-
-    i3windowManager *i3wm;
+    GdkColor *normal_color;
+    GdkColor *urgent_color;
+    gboolean strip_workspace_number;
 }
-i3WorkspacesPlugin;
+i3WorkspacesOptions;
 
-G_END_DECLS
+i3WorkspacesOptions * i3_workspaces_options_new();
+void                  i3_workspaces_options_free(i3WorkspacesOptions *options);
+gboolean              i3_workspaces_options_load(i3WorkspacesOptions *options, XfcePanelPlugin *plugin);
+gboolean              i3_workspaces_options_save(i3WorkspacesOptions *options, XfcePanelPlugin *plugin);
 
-#endif /* !__PLUGIN_H__ */
+#endif /* I3W_OPTIONS_H */
