@@ -15,8 +15,10 @@ plugindir = \
 
 libi3workspaces_la_SOURCES = \
 	i3wm-delegate.c \
+	i3w-config.c \
 	i3w-plugin.c \
 	i3wm-delegate.h \
+	i3w-config.h \
 	i3w-plugin.h
 
 libi3workspaces_la_CFLAGS = \

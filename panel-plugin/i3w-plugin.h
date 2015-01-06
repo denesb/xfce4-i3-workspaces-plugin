@@ -20,7 +20,7 @@
 #define __PLUGIN_H__
 
 #include "i3wm-delegate.h"
-#include "i3w-options.h"
+#include "i3w-config.h"
 
 G_BEGIN_DECLS
 
@@ -34,7 +34,7 @@ typedef struct
     GtkWidget       *hvbox;
     GtkWidget       **buttons;
 
-    i3WorkspacesOptions *options;
+    i3WorkspacesConfig *config;
 
     i3windowManager *i3wm;
 }
