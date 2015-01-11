@@ -32,24 +32,57 @@
 typedef struct {
     i3WorkspacesConfig *config;
     XfcePanelPlugin *plugin;
+    ConfigChangedCallback cb;
+    gpointer cb_data;
 } ConfigDialogClosedParam;
 
-guint32
-serialize_gdkcolor(GdkColor *gdkcolor);
-GdkColor *
-unserialize_gdkcolor(guint32 color);
-
 void
-normal_color_changed(GtkWidget *widget, i3WorkspacesConfig *config);
+normal_color_changed(GtkWidget *button, i3WorkspacesConfig *config);
 void
-urgent_color_changed(GtkWidget *widget, i3WorkspacesConfig *config);
+urgent_color_changed(GtkWidget *button, i3WorkspacesConfig *config);
 void
-strip_workspace_numbers_changed(GtkWidget *widget, i3WorkspacesConfig *config);
+strip_workspace_numbers_changed(GtkWidget *button, i3WorkspacesConfig *config);
 
 void
 config_dialog_closed(GtkWidget *dialog, int response, ConfigDialogClosedParam *param);
 
 /* Function Implementations */
+
+guint32
+serialize_gdkcolor(GdkColor *gdkcolor)
+{
+    guint32 color = 0;
+
+    // truncate the GdkColor components to 8 bit
+    guint16 red_component = gdkcolor->red >> 8;
+    guint16 green_component = gdkcolor->green >> 8;
+    guint16 blue_component = gdkcolor->blue >> 8;
+
+    // shift and add the color components
+    color += ((guint32) red_component) << 16;
+    color += ((guint32) green_component) << 8;
+    color += ((guint32) blue_component);
+
+    return color;
+}
+
+GdkColor *
+unserialize_gdkcolor(guint32 color)
+{
+    GdkColor *gdkcolor = g_new0(GdkColor, 1);
+
+    // Mask and shift the color components
+    guint16 red_component = (guint16) ((color & 0xff0000) >> 16);
+    guint16 green_component = (guint16) ((color & 0x00ff00) >> 8);
+    guint16 blue_component = (guint16) ((color & 0x0000ff));
+
+    // expand the GdkColor components to 16 bit
+    gdkcolor->red = red_component << 8;
+    gdkcolor->green = green_component << 8;
+    gdkcolor->blue = blue_component << 8;
+
+    return gdkcolor;
+}
 
 i3WorkspacesConfig *
 i3_workspaces_config_new()
@@ -62,9 +95,6 @@ i3_workspaces_config_new()
 void
 i3_workspaces_config_free(i3WorkspacesConfig *config)
 {
-    if (config->normal_color) g_free(config->normal_color);
-    if (config->urgent_color) g_free(config->urgent_color);
-    
     g_free(config);
 }
 
@@ -78,13 +108,10 @@ i3_workspaces_config_load(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
     XfceRc *rc = xfce_rc_simple_open(file, FALSE);
     g_free(file);
 
-    guint32 normal_color = xfce_rc_read_int_entry(rc, "normal_color", 0x000000);
-    config->normal_color = unserialize_gdkcolor(normal_color);
-
-    guint32 urgent_color = xfce_rc_read_int_entry(rc, "urgent_color", 0xff0000);
-    config->urgent_color = unserialize_gdkcolor(urgent_color);
-
-    config->strip_workspace_numbers = xfce_rc_read_bool_entry(rc, "strip_workspace_numbers", FALSE);
+    config->normal_color = xfce_rc_read_int_entry(rc, "normal_color", 0x000000);
+    config->urgent_color = xfce_rc_read_int_entry(rc, "urgent_color", 0xff0000);
+    config->strip_workspace_numbers = xfce_rc_read_bool_entry(rc,
+            "strip_workspace_numbers", FALSE);
 
     xfce_rc_close(rc);
     
@@ -101,9 +128,10 @@ i3_workspaces_config_save(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
     XfceRc *rc = xfce_rc_simple_open(file, FALSE);
     g_free(file);
 
-    xfce_rc_write_int_entry(rc, "normal_color", serialize_gdkcolor(config->normal_color));
-    xfce_rc_write_int_entry(rc, "urgent_color", serialize_gdkcolor(config->urgent_color));
-    xfce_rc_write_bool_entry(rc, "strip_workspace_numbers", config->strip_workspace_numbers);
+    xfce_rc_write_int_entry(rc, "normal_color", config->normal_color);
+    xfce_rc_write_int_entry(rc, "urgent_color", config->urgent_color);
+    xfce_rc_write_bool_entry(rc, "strip_workspace_numbers",
+            config->strip_workspace_numbers);
 
     xfce_rc_close(rc);
     
@@ -111,7 +139,8 @@ i3_workspaces_config_save(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
 }
 
 void
-i3_workspaces_config_show(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
+i3_workspaces_config_show(i3WorkspacesConfig *config, XfcePanelPlugin *plugin,
+        ConfigChangedCallback cb, gpointer cb_data)
 {
     GtkWidget *dialog, *dialog_vbox, *hbox, *button, *label;
 
@@ -135,7 +164,8 @@ i3_workspaces_config_show(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
     label = gtk_label_new(_("Normal Workspace Color:"));
     gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0);
 
-    button = gtk_color_button_new_with_color(config->normal_color);
+    button = gtk_color_button_new_with_color(unserialize_gdkcolor(
+                config->normal_color));
     gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
     g_signal_connect(G_OBJECT(button), "color-set", G_CALLBACK(normal_color_changed), config);
 
@@ -147,7 +177,8 @@ i3_workspaces_config_show(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
     label = gtk_label_new(_("Urgent Workspace Color:"));
     gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0);
 
-    button = gtk_color_button_new_with_color(config->urgent_color);
+    button = gtk_color_button_new_with_color(unserialize_gdkcolor(
+                config->urgent_color));
     gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
     g_signal_connect(G_OBJECT(button), "color-set", G_CALLBACK(urgent_color_changed), config);
 
@@ -165,53 +196,33 @@ i3_workspaces_config_show(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
     ConfigDialogClosedParam *param = g_new(ConfigDialogClosedParam, 1);
     param->plugin = plugin;
     param->config = config;
+    param->cb = cb;
+    param->cb_data = cb_data;
     g_signal_connect(G_OBJECT(dialog), "response", G_CALLBACK(config_dialog_closed), param);
 
     gtk_widget_show_all(dialog);
 }
 
-guint32
-serialize_gdkcolor(GdkColor *gdkcolor)
+void
+strip_workspace_numbers_changed(GtkWidget *button, i3WorkspacesConfig *config)
 {
-    guint32 color = 0;
-
-    // Shift and add the color components
-    color += ((guint32) gdkcolor->red) << 4;
-    color += ((guint32) gdkcolor->green) << 2;
-    color += ((guint32) gdkcolor->blue);
-
-    return color;
-}
-
-GdkColor *
-unserialize_gdkcolor(guint32 color)
-{
-    GdkColor *gdkcolor = g_new0(GdkColor, 1);
-
-    // Mask and shift the color components
-    gdkcolor->red = (guint16) ((color & 0xff0000) >> 4);
-    gdkcolor->green = (guint16) ((color & 0x00ff00) >> 2);
-    gdkcolor->blue = (guint16) (color & 0x0000ff);
-
-    return gdkcolor;
+    //config->strip_workspace_numbers = gtk_toogle_button_get_active(GTK_TOGGLE_BUTTON(button));
 }
 
 void
-strip_workspace_numbers_changed(GtkWidget *widget, i3WorkspacesConfig *config)
+normal_color_changed(GtkWidget *button, i3WorkspacesConfig *config)
 {
-    g_printf("strip\n");
+    GdkColor color;
+    gtk_color_button_get_color(GTK_COLOR_BUTTON(button), &color);
+    config->normal_color = serialize_gdkcolor(&color);
 }
 
 void
-normal_color_changed(GtkWidget *widget, i3WorkspacesConfig *config)
+urgent_color_changed(GtkWidget *button, i3WorkspacesConfig *config)
 {
-    g_printf("normal_color\n");
-}
-
-void
-urgent_color_changed(GtkWidget *widget, i3WorkspacesConfig *config)
-{
-    g_printf("urgent_color\n");
+    GdkColor color;
+    gtk_color_button_get_color(GTK_COLOR_BUTTON(button), &color);
+    config->urgent_color = serialize_gdkcolor(&color);
 }
 
 void
@@ -222,6 +233,8 @@ config_dialog_closed(GtkWidget *dialog, int response, ConfigDialogClosedParam *p
     gtk_widget_destroy(dialog);
 
     i3_workspaces_config_save(param->config, param->plugin);
+
+    if (param->cb) param->cb(param->cb_data);
 
     g_free(param);
 }

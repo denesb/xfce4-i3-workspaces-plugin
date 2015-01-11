@@ -52,13 +52,16 @@ i3_workspaces_configure_plugin(XfcePanelPlugin *plugin,
         i3WorkspacesPlugin *i3_workspaces);
 
 static void
+i3_workspaces_config_changed(gpointer cb_data);
+
+static void
 i3_add_workspaces(i3WorkspacesPlugin *i3_workspaces);
 static void
 i3_remove_workspaces(i3WorkspacesPlugin *i3_workspaces);
 
 static void
 i3_set_button_label(GtkWidget *button, gchar *name, gboolean focused,
-        gboolean urgent);
+        gboolean urgent, i3WorkspacesConfig *config);
 
 static void
 i3_on_workspace_clicked(GtkWidget *button, gpointer data);
@@ -119,11 +122,16 @@ i3_workspaces_new(XfcePanelPlugin *plugin)
 
     i3_workspaces->buttons = (GtkWidget **) g_malloc0(sizeof(GtkWidget *) * I3_WORKSPACE_N);
 
-    i3wm_set_workspace_created_callback(i3_workspaces->i3wm, i3_on_workspace_created, i3_workspaces);
-    i3wm_set_workspace_destroyed_callback(i3_workspaces->i3wm, i3_on_workspace_destroyed, i3_workspaces);
-    i3wm_set_workspace_blurred_callback(i3_workspaces->i3wm, i3_on_workspace_blurred, i3_workspaces);
-    i3wm_set_workspace_focused_callback(i3_workspaces->i3wm, i3_on_workspace_focused, i3_workspaces);
-    i3wm_set_workspace_urgent_callback(i3_workspaces->i3wm, i3_on_workspace_urgent, i3_workspaces);
+    i3wm_set_workspace_created_callback(i3_workspaces->i3wm,
+            i3_on_workspace_created, i3_workspaces);
+    i3wm_set_workspace_destroyed_callback(i3_workspaces->i3wm,
+            i3_on_workspace_destroyed, i3_workspaces);
+    i3wm_set_workspace_blurred_callback(i3_workspaces->i3wm,
+            i3_on_workspace_blurred, i3_workspaces);
+    i3wm_set_workspace_focused_callback(i3_workspaces->i3wm,
+            i3_on_workspace_focused, i3_workspaces);
+    i3wm_set_workspace_urgent_callback(i3_workspaces->i3wm,
+            i3_on_workspace_urgent, i3_workspaces);
 
     i3_add_workspaces(i3_workspaces);
 
@@ -246,7 +254,22 @@ static void
 i3_workspaces_configure_plugin(XfcePanelPlugin *plugin, 
         i3WorkspacesPlugin *i3_workspaces)
 {
-    i3_workspaces_config_show(i3_workspaces->config, plugin);
+    i3_workspaces_config_show(i3_workspaces->config, plugin,
+            i3_workspaces_config_changed, (gpointer)i3_workspaces);
+}
+
+/**
+ * i3_workspaces_config_changed:
+ * @gpointer cb_data: the callback data
+ *
+ * Callback funtion which is called when the configuration is updated
+ */
+static void
+i3_workspaces_config_changed(gpointer cb_data)
+{
+    i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) cb_data;
+    i3_remove_workspaces(i3_workspaces);
+    i3_add_workspaces(i3_workspaces);
 }
 
 /**
@@ -269,11 +292,14 @@ i3_add_workspaces(i3WorkspacesPlugin *i3_workspaces)
             button = xfce_panel_create_button();
             gtk_button_set_label(GTK_BUTTON(button), workspace->name);
 
-            i3_set_button_label(button, workspace->name, workspace->focused, workspace->urgent);
+            i3_set_button_label(button, workspace->name, workspace->focused,
+                    workspace->urgent, i3_workspaces->config);
 
-            g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(i3_on_workspace_clicked), i3_workspaces);
+            g_signal_connect(G_OBJECT(button), "clicked",
+                    G_CALLBACK(i3_on_workspace_clicked), i3_workspaces);
 
-            gtk_button_set_use_underline(GTK_BUTTON(button), FALSE); /* avoid acceleration key interference */
+            /* avoid acceleration key interference */
+            gtk_button_set_use_underline(GTK_BUTTON(button), FALSE);
             gtk_box_pack_start(GTK_BOX(i3_workspaces->hvbox), button, FALSE, FALSE, 0);
             gtk_widget_show(button);
             i3_workspaces->buttons[workspace->num] = button;
@@ -348,7 +374,8 @@ i3_on_workspace_blurred(i3workspace *workspace, gpointer data)
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
 
     GtkWidget *button = i3_workspaces->buttons[workspace->num];
-    i3_set_button_label(button, workspace->name, workspace->focused, workspace->urgent);
+    i3_set_button_label(button, workspace->name, workspace->focused,
+            workspace->urgent, i3_workspaces->config);
 }
 
 /**
@@ -365,7 +392,8 @@ i3_on_workspace_focused(i3workspace *workspace, gpointer data)
 
     workspace->urgent = FALSE; // reset the urgent flag
     GtkWidget *button = i3_workspaces->buttons[workspace->num];
-    i3_set_button_label(button, workspace->name, workspace->focused, workspace->urgent);
+    i3_set_button_label(button, workspace->name, workspace->focused,
+            workspace->urgent, i3_workspaces->config);
 }
 
 /**
@@ -381,7 +409,8 @@ i3_on_workspace_urgent(i3workspace *workspace, gpointer data)
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
 
     GtkWidget *button = i3_workspaces->buttons[workspace->num];
-    i3_set_button_label(button, workspace->name, workspace->focused, workspace->urgent);
+    i3_set_button_label(button, workspace->name, workspace->focused,
+            workspace->urgent, i3_workspaces->config);
 }
 
 /**
@@ -394,20 +423,19 @@ i3_on_workspace_urgent(i3workspace *workspace, gpointer data)
  * Generate the label for the workspace button.
  */
 static void
-i3_set_button_label(GtkWidget *button, gchar *name, gboolean focused, gboolean urgent)
+i3_set_button_label(GtkWidget *button, gchar *name, gboolean focused, gboolean urgent, 
+        i3WorkspacesConfig *config)
 {
-    static gchar * template = "<span foreground=\"%s\" weight=\"%s\">%s</span>";
+    static gchar * template = "<span foreground=\"#%06X\" weight=\"%s\">%s</span>";
     static gchar * focused_weight = "bold";
     static gchar * blurred_weight = "normal";
-    static gchar * urgent_color = "red";
-    static gchar * normal_color = "black";
 
     // allocate space for the maximum possible size of the label
-    gulong maxlen = strlen(name) + 50;
+    gulong maxlen = strlen(name) + 51;
     gchar *label_str = (gchar *) calloc(maxlen, sizeof(gchar));
 
     g_snprintf(label_str, maxlen, template,
-            urgent ? urgent_color : normal_color,
+            urgent ? config->urgent_color : config->normal_color,
             focused ? focused_weight : blurred_weight,
             name);
 

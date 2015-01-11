@@ -23,12 +23,21 @@
 
 typedef struct
 {
-    GdkColor *normal_color;
-    GdkColor *urgent_color;
+    guint32 normal_color;
+    guint32 urgent_color;
     gboolean strip_workspace_numbers;
 }
 i3WorkspacesConfig;
 
+typedef void (*ConfigChangedCallback) (gpointer cb_data);
+
+/* utility functions */
+guint32
+serialize_gdkcolor(GdkColor *gdkcolor);
+GdkColor *
+unserialize_gdkcolor(guint32 color);
+
+/* interface functions */
 i3WorkspacesConfig *
 i3_workspaces_config_new();
 void
@@ -38,6 +47,7 @@ i3_workspaces_config_load(i3WorkspacesConfig *config, XfcePanelPlugin *plugin);
 gboolean
 i3_workspaces_config_save(i3WorkspacesConfig *config, XfcePanelPlugin *plugin);
 void
-i3_workspaces_config_show(i3WorkspacesConfig *config, XfcePanelPlugin *plugin);
+i3_workspaces_config_show(i3WorkspacesConfig *config, XfcePanelPlugin *plugin,
+        ConfigChangedCallback cb, gpointer cb_data);
 
 #endif /* I3W_CONFIG_H */
