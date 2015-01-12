@@ -467,5 +467,11 @@ i3_on_workspace_clicked(GtkWidget *button, gpointer data)
             break;
         }
     }
-    i3wm_goto_workspace(i3_workspaces->i3wm, button_index);
+
+    GError *err = NULL;
+    i3wm_goto_workspace(i3_workspaces->i3wm, button_index, &err);
+    if (err != NULL)
+    {
+        fprintf(stderr, "%s", err->message);
+    }
 }
