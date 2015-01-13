@@ -435,7 +435,8 @@ i3_set_button_label(GtkWidget *button, gchar *name, gboolean focused, gboolean u
     gchar *label_str = (gchar *) calloc(maxlen, sizeof(gchar));
 
     g_snprintf(label_str, maxlen, template,
-            urgent ? config->urgent_color : config->normal_color,
+            urgent ? config->urgent_color :
+               focused ? config->focused_color : config->normal_color,
             focused ? focused_weight : blurred_weight,
             name);
 
