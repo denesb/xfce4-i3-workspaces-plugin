@@ -27,22 +27,33 @@
 /*
  * Prototypes
  */
-static void init_workspaces(i3windowManager *i3wm, GError **err);
-static i3workspace * create_workspace(i3ipcWorkspaceReply * workspaceReply);
-static void destroy_workspace(i3workspace * workspace);
-static void subscribe_to_events(i3windowManager *i3w, GError **err);
-static i3workspace * lookup_workspace(i3windowManager *i3w, const gchar *const workspaceName);
+static void
+init_workspaces(i3windowManager *i3wm, GError **err);
+static i3workspace *
+create_workspace(i3ipcWorkspaceReply * workspaceReply);
+static void
+destroy_workspace(i3workspace * workspace);
+static void
+subscribe_to_events(i3windowManager *i3w, GError **err);
+static i3workspace *
+lookup_workspace(i3windowManager *i3w, const gchar *const workspaceName);
 
 /*
  * Workspace event handlers
  */
-static void on_workspace_event(i3ipcConnection *conn, i3ipcWorkspaceEvent *e, gpointer i3w);
-static void on_focus_workspace(i3windowManager *i3w, i3ipcCon *current, i3ipcCon *old);
-static void on_init_workspace(i3windowManager *i3w);
-static void on_empty_workspace(i3windowManager *i3w);
-static void on_urgent_workspace(i3windowManager *i3w);
+static void
+on_workspace_event(i3ipcConnection *conn, i3ipcWorkspaceEvent *e, gpointer i3w);
+static void
+on_focus_workspace(i3windowManager *i3w, i3ipcCon *current, i3ipcCon *old);
+static void
+on_init_workspace(i3windowManager *i3w);
+static void
+on_empty_workspace(i3windowManager *i3w);
+static void
+on_urgent_workspace(i3windowManager *i3w);
 
-static void on_ipc_shutdown(i3windowManager *i3wm);
+static void
+on_ipc_shutdown_proxy(i3ipcConnection *connection, gpointer i3w);
 
 /*
  * Implementations of public functions
@@ -50,6 +61,8 @@ static void on_ipc_shutdown(i3windowManager *i3wm);
 
 /**
  * i3wm_construct:
+ * @err: The error object
+ *
  * Construct the i3 windowmanager delegate struct.
  */
 i3windowManager * i3wm_construct(GError **err)
@@ -65,7 +78,7 @@ i3windowManager * i3wm_construct(GError **err)
         return NULL;
     }
 
-    g_signal_connect(i3wm->connection, "ipc-shutdown", G_CALLBACK(on_ipc_shutdown), i3wm);
+    g_signal_connect(i3wm->connection, "ipc-shutdown", G_CALLBACK(on_ipc_shutdown_proxy), i3wm);
 
     i3wm->workspaces = (i3workspace **) g_malloc0(I3_WORKSPACE_N * sizeof(i3workspace *));
 
@@ -74,6 +87,7 @@ i3windowManager * i3wm_construct(GError **err)
     i3wm->on_workspace_blurred = NULL;
     i3wm->on_workspace_focused = NULL;
     i3wm->on_workspace_urgent = NULL;
+    i3wm->on_ipc_shutdown = NULL;
 
     GError *init_err = NULL;
     init_workspaces(i3wm, &init_err);
@@ -91,9 +105,7 @@ i3windowManager * i3wm_construct(GError **err)
     if (NULL != subscribe_err)
     {
         g_propagate_error(err, subscribe_err);
-        g_object_unref(i3wm->connection);
-        //TODO: free every workspace
-        g_free(i3wm->workspaces);
+        i3wm_destruct(i3wm);
         g_free(i3wm);
         return NULL;
     }
@@ -106,7 +118,8 @@ i3windowManager * i3wm_construct(GError **err)
  * @i3wm: the window manager delegate struct
  * Destruct the i3 windowmanager delegate struct.
  */
-void i3wm_destruct(i3windowManager *i3wm)
+void
+i3wm_destruct(i3windowManager *i3wm)
 {
     g_object_unref(i3wm->connection);
 
@@ -126,7 +139,8 @@ void i3wm_destruct(i3windowManager *i3wm)
  *
  * Returns: i3workspace**
  */
-i3workspace ** i3wm_get_workspaces(i3windowManager *i3wm)
+i3workspace **
+i3wm_get_workspaces(i3windowManager *i3wm)
 {
     return i3wm->workspaces;
 }
@@ -139,7 +153,8 @@ i3workspace ** i3wm_get_workspaces(i3windowManager *i3wm)
  *
  * Set the workspace created callback.
  */
-void i3wm_set_workspace_created_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data)
+void
+i3wm_set_workspace_created_callback(i3windowManager *i3wm, i3wmEventCallback callback, gpointer data)
 {
     i3wm->on_workspace_created = callback;
     i3wm->on_workspace_created_data = data;
@@ -153,7 +168,8 @@ void i3wm_set_workspace_created_callback(i3windowManager *i3wm, i3wm_event_callb
  *
  * Set the workspace destroyed callback.
  */
-void i3wm_set_workspace_destroyed_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data)
+void
+i3wm_set_workspace_destroyed_callback(i3windowManager *i3wm, i3wmEventCallback callback, gpointer data)
 {
     i3wm->on_workspace_destroyed = callback;
     i3wm->on_workspace_destroyed_data = data;
@@ -167,7 +183,8 @@ void i3wm_set_workspace_destroyed_callback(i3windowManager *i3wm, i3wm_event_cal
  *
  * Set the workspace blurred callback.
  */
-void i3wm_set_workspace_blurred_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data)
+void
+i3wm_set_workspace_blurred_callback(i3windowManager *i3wm, i3wmEventCallback callback, gpointer data)
 {
     i3wm->on_workspace_blurred = callback;
     i3wm->on_workspace_focused_data = data;
@@ -181,7 +198,8 @@ void i3wm_set_workspace_blurred_callback(i3windowManager *i3wm, i3wm_event_callb
  *
  * Set the workspace focused callback.
  */
-void i3wm_set_workspace_focused_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data)
+void
+i3wm_set_workspace_focused_callback(i3windowManager *i3wm, i3wmEventCallback callback, gpointer data)
 {
     i3wm->on_workspace_focused = callback;
     i3wm->on_workspace_blurred_data = data;
@@ -195,10 +213,27 @@ void i3wm_set_workspace_focused_callback(i3windowManager *i3wm, i3wm_event_callb
  *
  * Set the workspace urgent callback.
  */
-void i3wm_set_workspace_urgent_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data)
+void
+i3wm_set_workspace_urgent_callback(i3windowManager *i3wm, i3wmEventCallback callback, gpointer data)
 {
     i3wm->on_workspace_urgent = callback;
     i3wm->on_workspace_urgent_data = data;
+}
+
+/**
+ * i3wm_set_ipch_shutdown_callback:
+ * @i3wm: the window manager delegate struct
+ * @callback: the callback
+ * @data: the data to be passed to the callback function
+ *
+ * Set the ipc shutdown event callback.
+ */
+void
+i3wm_set_ipch_shutdown_callback(i3windowManager *i3wm,
+        i3wmIpcShutdownCallback callback, gpointer data)
+{
+    i3wm->on_ipc_shutdown = callback;
+    i3wm->on_ipc_shutdown_data = data;
 }
 
 /**
@@ -208,7 +243,8 @@ void i3wm_set_workspace_urgent_callback(i3windowManager *i3wm, i3wm_event_callba
  *
  * Instruct the window manager to jump to the specified workspace.
  */
-void i3wm_goto_workspace(i3windowManager *i3wm, gint workspace_num, GError **err)
+void
+i3wm_goto_workspace(i3windowManager *i3wm, gint workspace_num, GError **err)
 {
     size_t cmd_size = 13 * sizeof(gchar);
     gchar *command_str = (gchar *) malloc(cmd_size);
@@ -245,7 +281,8 @@ void i3wm_goto_workspace(i3windowManager *i3wm, gint workspace_num, GError **err
  *
  * Returns: the created workspace
  */
-i3workspace * create_workspace(i3ipcWorkspaceReply * workspaceReply)
+i3workspace *
+create_workspace(i3ipcWorkspaceReply * workspaceReply)
 {
     i3workspace *workspace = (i3workspace *) g_malloc(sizeof(i3workspace));
 
@@ -263,7 +300,8 @@ i3workspace * create_workspace(i3ipcWorkspaceReply * workspaceReply)
  *
  * Destroys the workspace
  */
-void destroy_workspace(i3workspace *workspace)
+void
+destroy_workspace(i3workspace *workspace)
 {
     g_free(workspace->name);
     g_free(workspace);
@@ -273,10 +311,12 @@ void destroy_workspace(i3workspace *workspace)
 /**
  * init_workspaces:
  * @i3wm: the window manager delegate struct
+ * @err: the error object
  *
  * Initialize the workspace list.
  */
-void init_workspaces(i3windowManager *i3wm, GError **err)
+void
+init_workspaces(i3windowManager *i3wm, GError **err)
 {
     GError *get_err = NULL;
     GSList *workspacesList = i3ipc_connection_get_workspaces(i3wm->connection, &get_err);
@@ -299,10 +339,12 @@ void init_workspaces(i3windowManager *i3wm, GError **err)
 /**
  * subscribe_to_events:
  * @i3wm: the window manager delegate struct
+ * @err: the error object
  *
  * Subscribe to the workspace events.
  */
-void subscribe_to_events(i3windowManager *i3wm, GError **err)
+void
+subscribe_to_events(i3windowManager *i3wm, GError **err)
 {
     GError *ipc_err = NULL;
     i3ipcCommandReply *reply = NULL;
@@ -327,7 +369,8 @@ void subscribe_to_events(i3windowManager *i3wm, GError **err)
  * Lookup a workspace struct by its name.
  * Returns: an i3workspace*
  */
-i3workspace * lookup_workspace(i3windowManager *i3wm, const gchar *const workspaceName)
+i3workspace *
+lookup_workspace(i3windowManager *i3wm, const gchar *const workspaceName)
 {
     i3workspace *the_workspace = NULL;
     int i;
@@ -351,7 +394,8 @@ i3workspace * lookup_workspace(i3windowManager *i3wm, const gchar *const workspa
  *
  * The workspace event callback.
  */
-void on_workspace_event(i3ipcConnection *conn, i3ipcWorkspaceEvent *e, gpointer i3wm)
+void
+on_workspace_event(i3ipcConnection *conn, i3ipcWorkspaceEvent *e, gpointer i3wm)
 {
     if (0 == strncmp(e->change, "focus", 5)) on_focus_workspace((i3windowManager *) i3wm, e->current, e->old);
     else if (0 == strncmp(e->change, "init", 5)) on_init_workspace((i3windowManager *) i3wm);
@@ -368,7 +412,8 @@ void on_workspace_event(i3ipcConnection *conn, i3ipcWorkspaceEvent *e, gpointer 
  *
  * Focus workspace event handler.
  */
-void on_focus_workspace(i3windowManager *i3wm, i3ipcCon *current, i3ipcCon *old)
+void
+on_focus_workspace(i3windowManager *i3wm, i3ipcCon *current, i3ipcCon *old)
 {
     const gchar *const blurredName = i3ipc_con_get_name(old);
     const gchar *const focusedName = i3ipc_con_get_name(current);
@@ -393,7 +438,8 @@ void on_focus_workspace(i3windowManager *i3wm, i3ipcCon *current, i3ipcCon *old)
  *
  * Init workspace event handler
  */
-void on_init_workspace(i3windowManager *i3wm)
+void
+on_init_workspace(i3windowManager *i3wm)
 {
     GError **err = NULL;
     GSList *workspacesList = i3ipc_connection_get_workspaces(i3wm->connection, err);
@@ -420,7 +466,8 @@ void on_init_workspace(i3windowManager *i3wm)
  *
  * Empty workspace event handler
  */
-void on_empty_workspace(i3windowManager *i3wm)
+void
+on_empty_workspace(i3windowManager *i3wm)
 {
     i3workspace *workspace = NULL;
 
@@ -461,7 +508,8 @@ void on_empty_workspace(i3windowManager *i3wm)
  *
  * Urgent workspace event handler.
  */
-void on_urgent_workspace(i3windowManager *i3wm)
+void
+on_urgent_workspace(i3windowManager *i3wm)
 {
     // get the updated worksace list from the window manager
     GError **err = NULL;
@@ -482,26 +530,17 @@ void on_urgent_workspace(i3windowManager *i3wm)
     g_slist_free_full(workspacesList, (GDestroyNotify)i3ipc_workspace_reply_free);
 }
 
-static void on_ipc_shutdown(i3windowManager *i3wm)
+/**
+ * on_ipc_shutdown_proxy:
+ * @connection: the ipc connection object
+ * @i3wm - pointer to the window manager delegate struct
+ *
+ * Passes the ipc-shutdown signal to the callback
+ */
+static void
+on_ipc_shutdown_proxy(i3ipcConnection *connection, gpointer i3w)
 {
-    g_object_unref(i3wm->connection);
-
-    gboolean connected= FALSE;
-
-    while (!connected)
-    {
-        GError *err = NULL;
-        i3wm->connection = i3ipc_connection_new(NULL, &err);
-
-        if (NULL != err)
-        {
-            connected = FALSE;
-            fprintf(stderr, "%s", err->message);
-            g_error_free(err);
-        }
-        else
-        {
-            connected = TRUE;
-        }
-    }
+    i3windowManager *i3wm = (i3windowManager *) i3w;
+    if (i3wm->on_ipc_shutdown)
+        i3wm->on_ipc_shutdown(i3wm->on_ipc_shutdown_data);
 }

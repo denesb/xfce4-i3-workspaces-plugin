@@ -31,44 +31,58 @@ typedef struct _i3workspace
     gboolean urgent;
 } i3workspace;
 
-typedef void (*i3wm_event_callback) (i3workspace *workspace, gpointer data);
+typedef void (*i3wmEventCallback) (i3workspace *workspace, gpointer data);
+typedef void (*i3wmIpcShutdownCallback) (gpointer data);
 
 typedef struct _i3windowManager
 {
     i3ipcConnection *connection;
     i3workspace **workspaces;
 
-    i3wm_event_callback on_workspace_created;
-    i3wm_event_callback on_workspace_destroyed;
-    i3wm_event_callback on_workspace_blurred;
-    i3wm_event_callback on_workspace_focused;
-    i3wm_event_callback on_workspace_urgent;
+    i3wmEventCallback on_workspace_created;
+    i3wmEventCallback on_workspace_destroyed;
+    i3wmEventCallback on_workspace_blurred;
+    i3wmEventCallback on_workspace_focused;
+    i3wmEventCallback on_workspace_urgent;
+    i3wmIpcShutdownCallback on_ipc_shutdown;
 
     gpointer on_workspace_created_data;
     gpointer on_workspace_destroyed_data;
     gpointer on_workspace_blurred_data;
     gpointer on_workspace_focused_data;
     gpointer on_workspace_urgent_data;
+    gpointer on_ipc_shutdown_data;
 }
 i3windowManager;
 
 
-i3windowManager * i3wm_construct();
+i3windowManager * i3wm_construct(GError **err);
 
-void i3wm_destruct();
+void
+i3wm_destruct(i3windowManager *i3wm);
 
-i3workspace ** i3wm_get_workspaces(i3windowManager *i3wm);
+i3workspace **
+i3wm_get_workspaces(i3windowManager *i3wm);
 
-void i3wm_set_workspace_created_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data);
+void
+i3wm_set_workspace_created_callback(i3windowManager *i3wm, i3wmEventCallback callback, gpointer data);
 
-void i3wm_set_workspace_destroyed_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data);
+void
+i3wm_set_workspace_destroyed_callback(i3windowManager *i3wm, i3wmEventCallback callback, gpointer data);
 
-void i3wm_set_workspace_blurred_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data);
+void
+i3wm_set_workspace_blurred_callback(i3windowManager *i3wm, i3wmEventCallback callback, gpointer data);
 
-void i3wm_set_workspace_focused_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data);
+void
+i3wm_set_workspace_focused_callback(i3windowManager *i3wm, i3wmEventCallback callback, gpointer data);
 
-void i3wm_set_workspace_urgent_callback(i3windowManager *i3wm, i3wm_event_callback callback, gpointer data);
+void
+i3wm_set_workspace_urgent_callback(i3windowManager *i3wm, i3wmEventCallback callback, gpointer data);
 
-void i3wm_goto_workspace(i3windowManager *i3wm, gint workspace_num, GError **err);
+void
+i3wm_set_ipch_shutdown_callback(i3windowManager *i3wm, i3wmIpcShutdownCallback callback, gpointer data);
+
+void
+i3wm_goto_workspace(i3windowManager *i3wm, gint workspace_num, GError **err);
 
 #endif /* !__I3W_DELEGATE_H__ */
