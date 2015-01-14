@@ -39,6 +39,8 @@ typedef struct {
 void
 normal_color_changed(GtkWidget *button, i3WorkspacesConfig *config);
 void
+focused_color_changed(GtkWidget *button, i3WorkspacesConfig *config);
+void
 urgent_color_changed(GtkWidget *button, i3WorkspacesConfig *config);
 void
 strip_workspace_numbers_changed(GtkWidget *button, i3WorkspacesConfig *config);
@@ -109,6 +111,7 @@ i3_workspaces_config_load(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
     g_free(file);
 
     config->normal_color = xfce_rc_read_int_entry(rc, "normal_color", 0x000000);
+    config->focused_color = xfce_rc_read_int_entry(rc, "focused_color", 0x000000);
     config->urgent_color = xfce_rc_read_int_entry(rc, "urgent_color", 0xff0000);
     config->strip_workspace_numbers = xfce_rc_read_bool_entry(rc,
             "strip_workspace_numbers", FALSE);
@@ -129,6 +132,7 @@ i3_workspaces_config_save(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
     g_free(file);
 
     xfce_rc_write_int_entry(rc, "normal_color", config->normal_color);
+    xfce_rc_write_int_entry(rc, "focused_color", config->focused_color);
     xfce_rc_write_int_entry(rc, "urgent_color", config->urgent_color);
     xfce_rc_write_bool_entry(rc, "strip_workspace_numbers",
             config->strip_workspace_numbers);
@@ -168,6 +172,19 @@ i3_workspaces_config_show(i3WorkspacesConfig *config, XfcePanelPlugin *plugin,
                 config->normal_color));
     gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
     g_signal_connect(G_OBJECT(button), "color-set", G_CALLBACK(normal_color_changed), config);
+
+    /* focused color */
+    hbox = gtk_hbox_new(FALSE, 3);
+    gtk_container_add(GTK_CONTAINER(dialog_vbox), hbox);
+    gtk_container_set_border_width(GTK_CONTAINER(hbox), 3);
+
+    label = gtk_label_new(_("Focused Workspace Color:"));
+    gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0);
+
+    button = gtk_color_button_new_with_color(unserialize_gdkcolor(
+                config->focused_color));
+    gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
+    g_signal_connect(G_OBJECT(button), "color-set", G_CALLBACK(focused_color_changed), config);
 
     /* urgent color */
     hbox = gtk_hbox_new(FALSE, 3);
@@ -215,6 +232,14 @@ normal_color_changed(GtkWidget *button, i3WorkspacesConfig *config)
     GdkColor color;
     gtk_color_button_get_color(GTK_COLOR_BUTTON(button), &color);
     config->normal_color = serialize_gdkcolor(&color);
+}
+
+void
+focused_color_changed(GtkWidget *button, i3WorkspacesConfig *config)
+{
+    GdkColor color;
+    gtk_color_button_get_color(GTK_COLOR_BUTTON(button), &color);
+    config->focused_color = serialize_gdkcolor(&color);
 }
 
 void
