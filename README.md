@@ -17,9 +17,6 @@ Multiple monitors are not supported at the moment.
 Development
 -----------
 
-Development is done on the *develop* branch, so that is where you will find the latest development version.
-The *master* branch only contains stable versions.
-
 If you found a bug please report it in the [issue tracker](https://github.com/denesb/xfce4-i3-workspaces-plugin/issues "Bugs")
 
 If you want to contact me drop me a line at dns.botond at gmail dot com
