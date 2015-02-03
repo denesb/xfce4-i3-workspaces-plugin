@@ -68,12 +68,12 @@ on_ipc_shutdown_proxy(i3ipcConnection *connection, gpointer i3w);
 i3windowManager * i3wm_construct(GError **err)
 {
     i3windowManager *i3wm = g_new0(i3windowManager, 1);
-    GError *connection_err = NULL;
+    GError *tmp_err = NULL;
 
-    i3wm->connection = i3ipc_connection_new(NULL, &connection_err);
-    if (NULL != connection_err)
+    i3wm->connection = i3ipc_connection_new(NULL, &tmp_err);
+    if (NULL != tmp_err)
     {
-        g_propagate_error(err, connection_err);
+        g_propagate_error(err, tmp_err);
         g_free(i3wm);
         return NULL;
     }
@@ -89,24 +89,19 @@ i3windowManager * i3wm_construct(GError **err)
     i3wm->on_workspace_urgent = NULL;
     i3wm->on_ipc_shutdown = NULL;
 
-    GError *init_err = NULL;
-    init_workspaces(i3wm, &init_err);
-    if(NULL != init_err)
+    init_workspaces(i3wm, &tmp_err);
+    if(NULL != tmp_err)
     {
-        g_propagate_error(err, init_err);
-        g_object_unref(i3wm->connection);
-        g_free(i3wm->workspaces);
-        g_free(i3wm);
+        g_propagate_error(err, tmp_err);
+        i3wm_destruct(i3wm);
         return NULL;
     }
 
-    GError *subscribe_err = NULL;
-    subscribe_to_events(i3wm, &subscribe_err);
-    if (NULL != subscribe_err)
+    subscribe_to_events(i3wm, &tmp_err);
+    if (NULL != tmp_err)
     {
-        g_propagate_error(err, subscribe_err);
+        g_propagate_error(err, tmp_err);
         i3wm_destruct(i3wm);
-        g_free(i3wm);
         return NULL;
     }
 
@@ -121,15 +116,17 @@ i3windowManager * i3wm_construct(GError **err)
 void
 i3wm_destruct(i3windowManager *i3wm)
 {
+    g_printf("i3wm_destruct\n");
     g_object_unref(i3wm->connection);
 
     int i;
-    for (i = 0; i < I3_WORKSPACE_N; i++)
+    for (i = 1; i < I3_WORKSPACE_N; i++)
     {
-        destroy_workspace(i3wm->workspaces[i]);
+        if (i3wm->workspaces[i]) destroy_workspace(i3wm->workspaces[i]);
     }
 
     g_free(i3wm->workspaces);
+    g_free(i3wm);
 }
 
 /**
@@ -305,7 +302,6 @@ destroy_workspace(i3workspace *workspace)
 {
     g_free(workspace->name);
     g_free(workspace);
-    workspace = NULL;
 }
 
 /**
@@ -329,7 +325,7 @@ init_workspaces(i3windowManager *i3wm, GError **err)
     GSList *listItem;
     for (listItem = workspacesList; listItem != NULL; listItem = listItem->next)
     {
-        i3workspace * workspace = create_workspace((i3ipcWorkspaceReply *) listItem->data);
+        i3workspace *workspace = create_workspace((i3ipcWorkspaceReply *) listItem->data);
         i3wm->workspaces[workspace->num] = workspace;
     }
 
@@ -469,8 +465,6 @@ on_init_workspace(i3windowManager *i3wm)
 void
 on_empty_workspace(i3windowManager *i3wm)
 {
-    i3workspace *workspace = NULL;
-
     i3ipcWorkspaceReply *workspaceReplies[I3_WORKSPACE_N];
     memset(workspaceReplies, 0, I3_WORKSPACE_N * sizeof(i3ipcWorkspaceReply *));
 

@@ -87,9 +87,7 @@ unserialize_gdkcolor(guint32 color)
 i3WorkspacesConfig *
 i3_workspaces_config_new()
 {
-    i3WorkspacesConfig *config = g_new0(i3WorkspacesConfig, 1);
-    
-    return config;
+    return g_new0(i3WorkspacesConfig, 1);
 }
 
 void

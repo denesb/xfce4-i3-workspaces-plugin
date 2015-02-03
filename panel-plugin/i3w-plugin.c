@@ -24,6 +24,7 @@
 #endif
 
 #include <libxfce4panel/xfce-hvbox.h>
+#include <glib/gprintf.h>
 
 #include "i3w-plugin.h"
 
@@ -122,12 +123,12 @@ connect_callbacks(i3WorkspacesPlugin *i3_workspaces)
 static i3WorkspacesPlugin *
 construct_workspaces(XfcePanelPlugin *plugin)
 {
-    i3WorkspacesPlugin   *i3_workspaces;
-    GtkOrientation  orientation;
-    GtkWidget      *label;
+    i3WorkspacesPlugin *i3_workspaces;
+    GtkOrientation orientation;
+    GtkWidget *label;
 
     /* allocate memory for the plugin structure */
-    i3_workspaces = panel_slice_new0 (i3WorkspacesPlugin);
+    i3_workspaces = panel_slice_new0(i3WorkspacesPlugin);
 
     /* pointer to plugin */
     i3_workspaces->plugin = plugin;
@@ -160,7 +161,7 @@ construct_workspaces(XfcePanelPlugin *plugin)
 
     connect_callbacks(i3_workspaces);
 
-    i3_add_workspaces(i3_workspaces);
+    add_workspaces(i3_workspaces);
 
     return i3_workspaces;
 }
@@ -218,7 +219,6 @@ destruct(XfcePanelPlugin *plugin, i3WorkspacesPlugin *i3_workspaces)
 
     /* destroy the i3wm delegate */
     i3wm_destruct(i3_workspaces->i3wm);
-    g_free(i3_workspaces->i3wm);
 
     /* free the plugin structure */
     panel_slice_free(i3WorkspacesPlugin, i3_workspaces);
@@ -504,18 +504,20 @@ on_workspace_clicked(GtkWidget *button, gpointer data)
 static void
 on_ipc_shutdown(gpointer i3_w)
 {
+    g_printf("on_ipc_shutdown\n");
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) i3_w;
 
+    remove_workspaces(i3_workspaces);
     i3wm_destruct(i3_workspaces->i3wm);
-    g_free(i3_workspaces->i3wm);
+    i3_workspaces->i3wm = NULL;
 
     //TODO: error_state_on();
-    recover_from_disconnect(i3_workspaces);
+    //recover_from_disconnect(i3_workspaces);
     //TODO: error_state_off();
 
-    connect_callbacks(i3_workspaces);
+    //connect_callbacks(i3_workspaces);
 
-    i3_add_workspaces(i3_workspaces);
+    //add_workspaces(i3_workspaces);
 }
 
 static void
@@ -526,8 +528,8 @@ recover_from_disconnect(i3WorkspacesPlugin *i3_workspaces)
     i3_workspaces->i3wm = i3wm_construct(&err);
     while (NULL != err)
     {
-        fprintf(stderr, "Cannot connect to the i3 window manager: %s\n",
-                err->message);
+        //fprintf(stderr, "Cannot connect to the i3 window manager: %s\n",
+         //       err->message);
         g_error_free(err);
         err = NULL;
         i3_workspaces->i3wm = i3wm_construct(&err);
