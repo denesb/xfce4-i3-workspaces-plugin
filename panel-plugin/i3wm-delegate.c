@@ -116,7 +116,6 @@ i3windowManager * i3wm_construct(GError **err)
 void
 i3wm_destruct(i3windowManager *i3wm)
 {
-    g_printf("i3wm_destruct\n");
     g_object_unref(i3wm->connection);
 
     int i;
@@ -236,17 +235,17 @@ i3wm_set_ipch_shutdown_callback(i3windowManager *i3wm,
 /**
  * i3wm_goto_workspace:
  * @i3wm: the window manager delegate struct
- * @workspace_num: the index of the workspace to jump to
+ * @workspace: the workspace to jump to
  *
  * Instruct the window manager to jump to the specified workspace.
  */
 void
-i3wm_goto_workspace(i3windowManager *i3wm, gint workspace_num, GError **err)
+i3wm_goto_workspace(i3windowManager *i3wm, i3workspace *workspace, GError **err)
 {
-    size_t cmd_size = 13 * sizeof(gchar);
+    size_t cmd_size = (13 + strlen(workspace->name)) * sizeof(gchar);
     gchar *command_str = (gchar *) malloc(cmd_size);
     memset(command_str, 0, cmd_size);
-    sprintf(command_str, "workspace %i", workspace_num);
+    sprintf(command_str, "workspace %s", workspace->name);
 
     GError *ipc_err = NULL;
 
@@ -273,6 +272,7 @@ i3wm_goto_workspace(i3windowManager *i3wm, gint workspace_num, GError **err)
 /**
  * create_workspace:
  * @workspaceReply: the i3ipcWorkspaceReply struct
+ * @strip: strip workspace numbers ?
  *
  * Create a i3workspace struct from the i3ipcWorkspaceReply struct
  *
@@ -325,7 +325,7 @@ init_workspaces(i3windowManager *i3wm, GError **err)
     GSList *listItem;
     for (listItem = workspacesList; listItem != NULL; listItem = listItem->next)
     {
-        i3workspace *workspace = create_workspace((i3ipcWorkspaceReply *) listItem->data);
+        i3workspace *workspace = create_workspace((i3ipcWorkspaceReply *)listItem->data);
         i3wm->workspaces[workspace->num] = workspace;
     }
 

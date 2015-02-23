@@ -17,7 +17,6 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-
 #include <gtk/gtk.h>
 #include <glib/gprintf.h>
 #include <libxfce4util/libxfce4util.h>
@@ -221,7 +220,7 @@ i3_workspaces_config_show(i3WorkspacesConfig *config, XfcePanelPlugin *plugin,
 void
 strip_workspace_numbers_changed(GtkWidget *button, i3WorkspacesConfig *config)
 {
-    //config->strip_workspace_numbers = gtk_toogle_button_get_active(GTK_TOGGLE_BUTTON(button));
+    config->strip_workspace_numbers = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button));
 }
 
 void

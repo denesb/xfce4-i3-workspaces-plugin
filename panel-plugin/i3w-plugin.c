@@ -61,8 +61,11 @@ static void
 remove_workspaces(i3WorkspacesPlugin *i3_workspaces);
 
 static void
-set_button_label(GtkWidget *button, gchar *name, gboolean focused,
-        gboolean urgent, i3WorkspacesConfig *config);
+set_button_label(GtkWidget *button, i3workspace *workspace,
+        i3WorkspacesConfig *config);
+
+static gchar *
+strip_workspace_numbers(const gchar *name, int num);
 
 static void
 on_workspace_clicked(GtkWidget *button, gpointer data);
@@ -125,7 +128,6 @@ construct_workspaces(XfcePanelPlugin *plugin)
 {
     i3WorkspacesPlugin *i3_workspaces;
     GtkOrientation orientation;
-    GtkWidget *label;
 
     /* allocate memory for the plugin structure */
     i3_workspaces = panel_slice_new0(i3WorkspacesPlugin);
@@ -317,8 +319,7 @@ add_workspaces(i3WorkspacesPlugin *i3_workspaces)
             button = xfce_panel_create_button();
             gtk_button_set_label(GTK_BUTTON(button), workspace->name);
 
-            set_button_label(button, workspace->name, workspace->focused,
-                    workspace->urgent, i3_workspaces->config);
+            set_button_label(button, workspace, i3_workspaces->config);
 
             g_signal_connect(G_OBJECT(button), "clicked",
                     G_CALLBACK(on_workspace_clicked), i3_workspaces);
@@ -399,8 +400,7 @@ on_workspace_blurred(i3workspace *workspace, gpointer data)
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
 
     GtkWidget *button = i3_workspaces->buttons[workspace->num];
-    set_button_label(button, workspace->name, workspace->focused,
-            workspace->urgent, i3_workspaces->config);
+    set_button_label(button, workspace, i3_workspaces->config);
 }
 
 /**
@@ -417,8 +417,7 @@ on_workspace_focused(i3workspace *workspace, gpointer data)
 
     workspace->urgent = FALSE; // reset the urgent flag
     GtkWidget *button = i3_workspaces->buttons[workspace->num];
-    set_button_label(button, workspace->name, workspace->focused,
-            workspace->urgent, i3_workspaces->config);
+    set_button_label(button, workspace, i3_workspaces->config);
 }
 
 /**
@@ -434,8 +433,7 @@ on_workspace_urgent(i3workspace *workspace, gpointer data)
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
 
     GtkWidget *button = i3_workspaces->buttons[workspace->num];
-    set_button_label(button, workspace->name, workspace->focused,
-            workspace->urgent, i3_workspaces->config);
+    set_button_label(button, workspace, i3_workspaces->config);
 }
 
 /**
@@ -448,27 +446,63 @@ on_workspace_urgent(i3workspace *workspace, gpointer data)
  * Generate the label for the workspace button.
  */
 static void
-set_button_label(GtkWidget *button, gchar *name, gboolean focused, gboolean urgent, 
+set_button_label(GtkWidget *button, i3workspace *workspace, 
         i3WorkspacesConfig *config)
 {
     static gchar * template = "<span foreground=\"#%06X\" weight=\"%s\">%s</span>";
     static gchar * focused_weight = "bold";
     static gchar * blurred_weight = "normal";
 
+    gchar *name = config->strip_workspace_numbers ?
+        strip_workspace_numbers(workspace->name, workspace->num) :
+        workspace->name;
+
     // allocate space for the maximum possible size of the label
     gulong maxlen = strlen(name) + 51;
     gchar *label_str = (gchar *) calloc(maxlen, sizeof(gchar));
 
     g_snprintf(label_str, maxlen, template,
-            urgent ? config->urgent_color :
-               focused ? config->focused_color : config->normal_color,
-            focused ? focused_weight : blurred_weight,
+            workspace->urgent ? config->urgent_color :
+                (workspace->focused ? config->focused_color : config->normal_color),
+            workspace->focused ? focused_weight : blurred_weight,
             name);
 
     GtkWidget * label = gtk_bin_get_child(GTK_BIN(button));
     gtk_label_set_markup(GTK_LABEL(label), label_str);
 
     free(label_str);
+}
+
+/**
+ * strip_workspace_numbers:
+ * @workspaceName - the name of the workspace
+ * @workspaceNum - the number of the workspace
+ *
+ * Strips the workspace name of the workspace number.
+ * Returns: an i3workspace*
+ */
+static gchar *
+strip_workspace_numbers(const gchar *name, int num)
+{
+    size_t offset = 0;
+    offset += (num < 10) ? 1 : 2;
+    if (name[offset] == ':') offset++;
+
+    int len = strlen(name);
+    gchar *strippedName = NULL;
+
+    if (offset < len)
+    {
+        int strippedLen = len - offset + 1;
+        strippedName = (gchar*) malloc(strippedLen);
+        strippedName = memcpy(strippedName, name + offset, strippedLen);
+    }
+    else
+    {
+        strippedName = strdup(name);
+    }
+
+    return strippedName;
 }
 
 /**
@@ -482,20 +516,21 @@ static void
 on_workspace_clicked(GtkWidget *button, gpointer data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *)data;
+    i3workspace **workspaces = i3wm_get_workspaces(i3_workspaces->i3wm);
+    i3workspace *workspace = NULL;
 
-    gint button_index = 0;
     gint i;
     for (i = 1; i < I3_WORKSPACE_N; i++)
     {
         if (i3_workspaces->buttons[i] == button)
         {
-            button_index = i;
+            workspace = workspaces[i];
             break;
         }
     }
 
     GError *err = NULL;
-    i3wm_goto_workspace(i3_workspaces->i3wm, button_index, &err);
+    i3wm_goto_workspace(i3_workspaces->i3wm, workspace, &err);
     if (err != NULL)
     {
         fprintf(stderr, "%s", err->message);
@@ -505,13 +540,13 @@ on_workspace_clicked(GtkWidget *button, gpointer data)
 static void
 on_ipc_shutdown(gpointer i3_w)
 {
-    g_printf("on_ipc_shutdown\n");
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) i3_w;
 
     remove_workspaces(i3_workspaces);
     i3wm_destruct(i3_workspaces->i3wm);
     i3_workspaces->i3wm = NULL;
 
+    //FIXME fix this
     //TODO: error_state_on();
     //recover_from_disconnect(i3_workspaces);
     //TODO: error_state_off();

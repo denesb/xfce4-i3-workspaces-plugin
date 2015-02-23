@@ -83,6 +83,6 @@ void
 i3wm_set_ipch_shutdown_callback(i3windowManager *i3wm, i3wmIpcShutdownCallback callback, gpointer data);
 
 void
-i3wm_goto_workspace(i3windowManager *i3wm, gint workspace_num, GError **err);
+i3wm_goto_workspace(i3windowManager *i3wm, i3workspace *workspace, GError **err);
 
 #endif /* !__I3W_DELEGATE_H__ */
