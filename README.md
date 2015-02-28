@@ -10,6 +10,8 @@ Features
 
 Present a list of buttons, one for each workspace, labeled with the workspace name.
 The focused workspace is marked with a bold label. Urgent workspaces are marked with red labels.
+Different colors can be configured for the label in focused/non-focused states.
+Support for strip workspace numbers configuration.
 Clicking on a workspace button will navigate you to the respective workspace.
 
 Multiple monitors are not supported at the moment.
