@@ -22,9 +22,9 @@ Development
 
 If you found a bug please report it in the [issue tracker](https://github.com/denesb/xfce4-i3-workspaces-plugin/issues "Bugs")
 
-If you want to contact me drop me a line at dns.botond at gmail dot com
-
 Patches and pull requests are welcome!
+
+Feel free to contact me at: denes.botond at openmailbox dot org.
 
 Building
 --------
