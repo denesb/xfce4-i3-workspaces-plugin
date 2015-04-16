@@ -14,7 +14,8 @@ Different colors can be configured for the label in focused/non-focused states.
 Support for strip workspace numbers configuration.
 Clicking on a workspace button will navigate you to the respective workspace.
 
-Multiple monitors are not supported at the moment.
+Multiple monitors are not supported at the moment. To be more precice I haven't tested it with
+multiple monitors. It might work though.
 
 Development
 -----------
