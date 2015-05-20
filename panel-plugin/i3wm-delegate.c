@@ -519,6 +519,13 @@ on_urgent_workspace(i3windowManager *i3wm)
             if (i3wm->on_workspace_urgent)
                 i3wm->on_workspace_urgent(workspace, i3wm->on_workspace_urgent_data);
         }
+        else
+        {
+            i3workspace *workspace = i3wm->workspaces[workspaceReply->num];
+            workspace->urgent = FALSE;
+            if (i3wm->on_workspace_urgent)
+                i3wm->on_workspace_urgent(workspace, i3wm->on_workspace_urgent_data);
+        }
     }
 
     g_slist_free_full(workspacesList, (GDestroyNotify)i3ipc_workspace_reply_free);
