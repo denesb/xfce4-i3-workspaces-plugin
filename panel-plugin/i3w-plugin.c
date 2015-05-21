@@ -415,7 +415,6 @@ on_workspace_focused(i3workspace *workspace, gpointer data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
 
-    workspace->urgent = FALSE; // reset the urgent flag
     GtkWidget *button = i3_workspaces->buttons[workspace->num];
     set_button_label(button, workspace, i3_workspaces->config);
 }

@@ -512,13 +512,10 @@ on_urgent_workspace(i3windowManager *i3wm)
     for (listItem = workspacesList; listItem != NULL; listItem = listItem->next)
     {
         i3ipcWorkspaceReply * workspaceReply = (i3ipcWorkspaceReply *) listItem->data;
-        if (workspaceReply->urgent)
-        {
-            i3workspace *workspace = i3wm->workspaces[workspaceReply->num];
-            workspace->urgent = TRUE;
-            if (i3wm->on_workspace_urgent)
-                i3wm->on_workspace_urgent(workspace, i3wm->on_workspace_urgent_data);
-        }
+        i3workspace *workspace = i3wm->workspaces[workspaceReply->num];
+        workspace->urgent = workspaceReply->urgent;
+        if (i3wm->on_workspace_urgent)
+	        i3wm->on_workspace_urgent(workspace, i3wm->on_workspace_urgent_data);
     }
 
     g_slist_free_full(workspacesList, (GDestroyNotify)i3ipc_workspace_reply_free);
