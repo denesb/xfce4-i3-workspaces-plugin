@@ -69,6 +69,8 @@ strip_workspace_numbers(const gchar *name, int num);
 
 static void
 on_workspace_clicked(GtkWidget *button, gpointer data);
+static gboolean
+on_workspace_scrolled(GtkWidget *ebox, GdkEventScroll *ev, gpointer data);
 
 static void
 on_workspace_created(i3workspace *workspace, gpointer data);
@@ -145,6 +147,11 @@ construct_workspaces(XfcePanelPlugin *plugin)
     /* create some panel widgets */
     i3_workspaces->ebox = gtk_event_box_new();
     gtk_widget_show(i3_workspaces->ebox);
+
+    /* listen for scroll events */
+    gtk_widget_add_events(i3_workspaces->ebox, GDK_SCROLL_MASK);
+    g_signal_connect(G_OBJECT(i3_workspaces->ebox), "scroll-event",
+            G_CALLBACK(on_workspace_scrolled), i3_workspaces);
 
     i3_workspaces->hvbox = xfce_hvbox_new(orientation, FALSE, 2);
     gtk_widget_show(i3_workspaces->hvbox);
@@ -534,6 +541,66 @@ on_workspace_clicked(GtkWidget *button, gpointer data)
     {
         fprintf(stderr, "%s", err->message);
     }
+}
+
+/**
+ * on_workspace_scrolled:
+ * @ebox: the plugin's event box
+ * @data: the workspace plugin
+ *
+ * Workspace button click event handler.
+ *
+ * Returns: TRUE to stop event propogation
+ */
+static gboolean
+on_workspace_scrolled(GtkWidget *ebox, GdkEventScroll *ev, gpointer data)
+{
+    i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *)data;
+    i3workspace **workspaces = i3wm_get_workspaces(i3_workspaces->i3wm);
+    i3workspace *workspace;
+    gint i;
+
+    /* Find the focused workspace */
+    for (i = 1; i < I3_WORKSPACE_N; i++)
+    {
+        workspace = workspaces[i];
+        if (workspace && workspace->focused)
+            break;
+    }
+    if (i >= I3_WORKSPACE_N)
+        return FALSE;
+
+    switch (ev->direction)
+    {
+        case GDK_SCROLL_DOWN:
+            do {
+                i++;
+                if (i >= I3_WORKSPACE_N)
+                    return FALSE;
+                workspace = workspaces[i];
+            } while (!workspace);
+            break;
+
+        case GDK_SCROLL_UP:
+            do {
+                i--;
+                if (i <= 0)
+                    return FALSE;
+                workspace = workspaces[i];
+            } while (!workspace);
+            break;
+
+        default:
+            return FALSE;
+    }
+
+    GError *err = NULL;
+    i3wm_goto_workspace(i3_workspaces->i3wm, workspace, &err);
+    if (err != NULL)
+    {
+        fprintf(stderr, "%s", err->message);
+    }
+    return TRUE;
 }
 
 static void
