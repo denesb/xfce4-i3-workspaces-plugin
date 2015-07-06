@@ -546,9 +546,10 @@ on_workspace_clicked(GtkWidget *button, gpointer data)
 /**
  * on_workspace_scrolled:
  * @ebox: the plugin's event box
+ * @ev: the event data
  * @data: the workspace plugin
  *
- * Workspace button click event handler.
+ * Workspace scroll event handler.
  *
  * Returns: TRUE to stop event propogation
  */
@@ -573,21 +574,25 @@ on_workspace_scrolled(GtkWidget *ebox, GdkEventScroll *ev, gpointer data)
     switch (ev->direction)
     {
         case GDK_SCROLL_DOWN:
-            do {
+            do
+            {
                 i++;
                 if (i >= I3_WORKSPACE_N)
                     return FALSE;
                 workspace = workspaces[i];
-            } while (!workspace);
+            }
+            while (!workspace);
             break;
 
         case GDK_SCROLL_UP:
-            do {
+            do
+            {
                 i--;
                 if (i <= 0)
                     return FALSE;
                 workspace = workspaces[i];
-            } while (!workspace);
+            }
+            while (!workspace);
             break;
 
         default:
