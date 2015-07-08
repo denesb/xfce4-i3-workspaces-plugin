@@ -32,7 +32,9 @@ typedef struct
     /* panel widgets */
     GtkWidget       *ebox;
     GtkWidget       *hvbox;
-    GtkWidget       **buttons;
+
+    // hash table of i3workspace * => GtkButton *
+    GHashTable      *workspace_buttons;
 
     i3WorkspacesConfig *config;
 

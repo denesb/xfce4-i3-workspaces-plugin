@@ -19,8 +19,6 @@
 #ifndef __I3W_DELEGATE_H__
 #define __I3W_DELEGATE_H__
 
-#define I3_WORKSPACE_N 11
-
 #include <i3ipc-glib/i3ipc-glib.h>
 
 typedef struct _i3workspace
@@ -37,13 +35,14 @@ typedef void (*i3wmIpcShutdownCallback) (gpointer data);
 typedef struct _i3windowManager
 {
     i3ipcConnection *connection;
-    i3workspace **workspaces;
+    GSList *wlist;
 
     i3wmEventCallback on_workspace_created;
     i3wmEventCallback on_workspace_destroyed;
     i3wmEventCallback on_workspace_blurred;
     i3wmEventCallback on_workspace_focused;
     i3wmEventCallback on_workspace_urgent;
+    i3wmEventCallback on_workspace_renamed;
     i3wmIpcShutdownCallback on_ipc_shutdown;
 
     gpointer on_workspace_created_data;
@@ -51,17 +50,19 @@ typedef struct _i3windowManager
     gpointer on_workspace_blurred_data;
     gpointer on_workspace_focused_data;
     gpointer on_workspace_urgent_data;
+    gpointer on_workspace_renamed_data;
     gpointer on_ipc_shutdown_data;
 }
 i3windowManager;
 
 
-i3windowManager * i3wm_construct(GError **err);
+i3windowManager *
+i3wm_construct(GError **err);
 
 void
 i3wm_destruct(i3windowManager *i3wm);
 
-i3workspace **
+GSList *
 i3wm_get_workspaces(i3windowManager *i3wm);
 
 void
@@ -78,6 +79,9 @@ i3wm_set_workspace_focused_callback(i3windowManager *i3wm, i3wmEventCallback cal
 
 void
 i3wm_set_workspace_urgent_callback(i3windowManager *i3wm, i3wmEventCallback callback, gpointer data);
+
+void
+i3wm_set_workspace_renamed_callback(i3windowManager *i3wm, i3wmEventCallback callback, gpointer data);
 
 void
 i3wm_set_ipch_shutdown_callback(i3windowManager *i3wm, i3wmIpcShutdownCallback callback, gpointer data);
