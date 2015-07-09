@@ -77,13 +77,7 @@ on_workspace_created(i3workspace *workspace, gpointer data);
 static void
 on_workspace_destroyed(i3workspace *workspace, gpointer data);
 static void
-on_workspace_blurred(i3workspace *workspace, gpointer data);
-static void
-on_workspace_focused(i3workspace *workspace, gpointer data);
-static void
-on_workspace_urgent(i3workspace *workspace, gpointer data);
-static void
-on_workspace_renamed(i3workspace *workspace, gpointer data);
+on_workspace_changed(i3workspace *workspace, gpointer data);
 
 static void
 on_ipc_shutdown(gpointer i3_w);
@@ -105,19 +99,17 @@ XFCE_PANEL_PLUGIN_REGISTER(construct);
 static void
 connect_callbacks(i3WorkspacesPlugin *i3_workspaces)
 {
-    i3wm_set_workspace_created_callback(i3_workspaces->i3wm,
+    i3wm_set_on_workspace_created(i3_workspaces->i3wm,
             on_workspace_created, i3_workspaces);
-    i3wm_set_workspace_destroyed_callback(i3_workspaces->i3wm,
+    i3wm_set_on_workspace_destroyed(i3_workspaces->i3wm,
             on_workspace_destroyed, i3_workspaces);
-    i3wm_set_workspace_blurred_callback(i3_workspaces->i3wm,
-            on_workspace_blurred, i3_workspaces);
-    i3wm_set_workspace_focused_callback(i3_workspaces->i3wm,
-            on_workspace_focused, i3_workspaces);
-    i3wm_set_workspace_urgent_callback(i3_workspaces->i3wm,
-            on_workspace_urgent, i3_workspaces);
-    i3wm_set_workspace_renamed_callback(i3_workspaces->i3wm,
-            on_workspace_renamed, i3_workspaces);
-    i3wm_set_ipch_shutdown_callback(i3_workspaces->i3wm,
+    i3wm_set_on_workspace_blurred(i3_workspaces->i3wm,
+            on_workspace_changed, i3_workspaces);
+    i3wm_set_on_workspace_focused(i3_workspaces->i3wm,
+            on_workspace_changed, i3_workspaces);
+    i3wm_set_on_workspace_urgent(i3_workspaces->i3wm,
+            on_workspace_changed, i3_workspaces);
+    i3wm_set_on_ipc_shutdown(i3_workspaces->i3wm,
             on_ipc_shutdown, i3_workspaces);
 }
 
@@ -394,62 +386,14 @@ on_workspace_destroyed(i3workspace *workspace, gpointer data)
 }
 
 /**
- * on_workspace_blurred:
+ * on_workspace_changed:
  * @workspace: the workspace
  * @data: the workspaces plugin
  *
- * Workspace blurred event handler.
+ * Workspace changed event handler.
  */
 static void
-on_workspace_blurred(i3workspace *workspace, gpointer data)
-{
-    i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
-
-    GtkWidget *button = (GtkWidget *) g_hash_table_lookup(i3_workspaces->workspace_buttons, workspace);
-    set_button_label(button, workspace, i3_workspaces->config);
-}
-
-/**
- * on_workspace_focused:
- * @workspace: the workspace
- * @data: the workspaces plugin
- *
- * Workspace focused event handler.
- */
-static void
-on_workspace_focused(i3workspace *workspace, gpointer data)
-{
-    i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
-
-    GtkWidget *button = (GtkWidget *) g_hash_table_lookup(i3_workspaces->workspace_buttons, workspace);
-    set_button_label(button, workspace, i3_workspaces->config);
-}
-
-/**
- * on_workspace_urgent:
- * @workspace: the workspace
- * @data: the workspaces plugin
- *
- * Workspace urgent event handler.
- */
-static void
-on_workspace_urgent(i3workspace *workspace, gpointer data)
-{
-    i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
-
-    GtkWidget *button = (GtkWidget *) g_hash_table_lookup(i3_workspaces->workspace_buttons, workspace);
-    set_button_label(button, workspace, i3_workspaces->config);
-}
-
-/**
- * on_workspace_renamed:
- * @workspace: the workspace
- * @data: the workspaces plugin
- *
- * Workspace renamed event handler.
- */
-static void
-on_workspace_renamed(i3workspace *workspace, gpointer data)
+on_workspace_changed(i3workspace *workspace, gpointer data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
 
@@ -572,7 +516,9 @@ static gboolean
 on_workspace_scrolled(GtkWidget *ebox, GdkEventScroll *ev, gpointer data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *)data;
+
     GList *wlist = g_hash_table_get_keys(i3_workspaces->workspace_buttons);
+    wlist = g_list_sort(wlist, (GCompareFunc) i3wm_workspace_cmp);
 
     /* Find the focused workspace */
     i3workspace *workspace = NULL;
@@ -584,12 +530,12 @@ on_workspace_scrolled(GtkWidget *ebox, GdkEventScroll *ev, gpointer data)
             break;
     }
 
-    if (witem = NULL)
+    if (witem == NULL)
         return FALSE;
 
-    if (ev->direction = GDK_SCROLL_DOWN)
+    if (ev->direction == GDK_SCROLL_DOWN)
         witem = witem->next;
-    else if (ev->direction = GDK_SCROLL_UP)
+    else if (ev->direction == GDK_SCROLL_UP)
         witem = witem->prev;
     else
         return FALSE;
