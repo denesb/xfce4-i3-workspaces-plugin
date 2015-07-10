@@ -393,20 +393,6 @@ workspace_str_cmp(const i3workspace *w, const gchar *s)
     return workspace_name_cmp(w->name, s);
 }
 
-/*
- * workspace_string_cmp:
- * @w - i3workspace *
- * @s - gchar *
- *
- * Compare workspace's name with the string
- * Returns: gint
- */
-static gint
-workspace_string_cmp(const i3workspace *w, const gchar *s)
-{
-    return strcmp(w->name, s);
-}
-
 /**
  * init_workspaces:
  * @i3wm: the window manager delegate struct
@@ -604,23 +590,20 @@ on_urgent_workspace(i3windowManager *i3wm)
     GError **err = NULL;
     GSList *wlist = i3ipc_connection_get_workspaces(i3wm->connection, err);
 
-    GSList *their_witem = wlist;
-    GSList *our_witem = i3wm->wlist;
-
+    GSList *witem_their;
+    GSList *witem_our;
     i3ipcWorkspaceReply *wtheir;
     i3workspace *wour;
 
     // find the workspace whoose urgen flag has changed
-    while (their_witem != NULL && our_witem != NULL)
+    for (witem_their = wlist; witem_their != NULL; witem_their = witem_their->next)
     {
-        wtheir = (i3ipcWorkspaceReply *) their_witem->data;
-        wour = (i3workspace *) our_witem->data;
+        wtheir = (i3ipcWorkspaceReply *) witem_their->data;
 
+        witem_our = g_slist_find_custom(i3wm->wlist, wtheir->name, (GCompareFunc) workspace_str_cmp);
+        wour = (i3workspace *) witem_our->data;
         if (wtheir->urgent != wour->urgent)
             break;
-
-        their_witem = their_witem->next;
-        our_witem = our_witem->next;
     }
 
     wour->urgent = wtheir->urgent;
