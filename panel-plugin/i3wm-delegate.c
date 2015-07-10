@@ -29,6 +29,8 @@
 static void
 destroy_workspace(i3workspace *workspace);
 
+long
+ws_name_to_number(const char *name);
 static gint
 workspace_name_cmp(const gchar *a, const gchar *b);
 static gint
@@ -338,17 +340,62 @@ destroy_workspace(i3workspace *workspace)
 }
 
 /*
+ * ws_name_to_number:
+ * @name - char *
+ *
+ * Parses the workspace name as a number. Returns -1 if the workspace should be
+ * interpreted as a "named workspace".
+ * This function was copied verbatim from the i3 source tree, from src/util.c
+ *
+ * Returns: long
+ */
+long
+ws_name_to_number(const char *name) {
+    /* positive integers and zero are interpreted as numbers */
+    char *endptr = NULL;
+    long parsed_num = strtol(name, &endptr, 10);
+    if (parsed_num == LONG_MIN ||
+        parsed_num == LONG_MAX ||
+        parsed_num < 0 ||
+        endptr == name) {
+        parsed_num = -1;
+    }
+
+    return parsed_num;
+}
+
+/*
  * workspace_name_cmp:
  * @a - gchar *
  * @b - gchar *
  *
- * Compare to workspace names
+ * Compare two workspace names.
+ * Return -x if a > b, x if a < b and 0 if a == b, where x is an arbitrary
+ * natural number.
  * Returns: gint
  */
 static gint
 workspace_name_cmp(const gchar *a, const gchar *b)
 {
-    return strcmp(b, a);
+    gint result;
+    long na, nb;
+
+    na = ws_name_to_number(a);
+    nb = ws_name_to_number(b);
+
+    if (na == -1 || nb == -1)
+    {
+        if (na == -1 && nb == -1)
+            result = strcmp(b, a);
+        else
+            result = na == -1 ? -1 : 1;
+    }
+    else
+    {
+        result = nb - na;
+    }
+
+    return result;
 }
 
 /*
