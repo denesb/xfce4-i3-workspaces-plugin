@@ -514,9 +514,9 @@ on_focus_workspace(i3windowManager *i3wm, i3ipcCon *current, i3ipcCon *old)
     const gchar *focusedName = i3ipc_con_get_name(current);
 
     GSList *wblurred_item = g_slist_find_custom(i3wm->wlist, blurredName, (GCompareFunc) workspace_str_cmp);
-    i3workspace *wblurred = (i3workspace *) wblurred_item->data;
-    if (wblurred) // this will be NULL in case of the scratch workspace
+    if (wblurred_item) // this will be NULL in case of the scratch workspace
     {
+        i3workspace *wblurred = (i3workspace *) wblurred_item->data;
         wblurred->focused = FALSE;
         invoke_callback(i3wm->on_workspace_blurred, wblurred);
     }
@@ -638,52 +638,12 @@ on_urgent_workspace(i3windowManager *i3wm)
 void
 on_rename_workspace(i3windowManager *i3wm)
 {
+    // From our point of view renaming a workspace is equivalent to removing
+    // the one with the old name and adding a new with the new name.
+    // Of corse this is not optimal in terms of resources but the simpleness
+    // of the code is worth it.
     on_init_workspace(i3wm);
     on_empty_workspace(i3wm);
-    /*
-    GError **err = NULL;
-    GSList *wlist = i3ipc_connection_get_workspaces(i3wm->connection, err);
-
-    i3ipcWorkspaceReply wrlookup;
-    i3ipcWorkspaceReply *wreply;
-    i3workspace *workspace;
-
-    i3workspace *wremoved = NULL;
-    i3workspace *wadded = NULL;
-    GSList *witem;
-
-    // find the "removed" workspace
-    for (witem = i3wm->wlist; witem != NULL; witem = witem->next)
-    {
-        workspace = (i3workspace *) witem->data;
-        wrlookup.name = workspace->name;
-
-        if (g_slist_find_custom(wlist, &wrlookup, (GCompareFunc) workspace_reply_cmp) == NULL)
-        {
-            wremoved = workspace;
-            break;
-        }
-    }
-
-    // find the "added" workspace
-    for (witem = wlist; witem != NULL; witem = witem->next)
-    {
-        wreply = (i3ipcWorkspaceReply *) witem->data;
-
-        if (lookup_workspace(i3wm, wreply->name) == NULL)
-            break;
-    }
-
-    i3wm->wlist = g_slist_remove(i3wm->wlist, wremoved);
-    invoke_callback(i3wm->on_workspace_destroyed, wremoved);
-    destroy_workspace(wremoved);
-
-    wadded = create_workspace(wreply);
-    i3wm->wlist = g_slist_insert_sorted(i3wm->wlist, wadded, (GCompareFunc) i3wm_workspace_cmp);
-    invoke_callback(i3wm->on_workspace_created, wadded);
-
-    g_slist_free_full(wlist, (GDestroyNotify) i3ipc_workspace_reply_free);
-    */
 }
 
 /**
