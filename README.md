@@ -24,7 +24,7 @@ If you found a bug please report it in the [issue tracker](https://github.com/de
 
 Patches and pull requests are welcome!
 
-Feel free to contact me at: denes.botond at openmailbox dot org.
+Feel free to contact me at: dns.botond at gmail dot com.
 
 Building
 --------
