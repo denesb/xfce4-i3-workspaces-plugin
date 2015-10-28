@@ -29,10 +29,13 @@ Feel free to contact me at: dns.botond at gmail dot com.
 Building
 --------
 
-Prerequisites: C toolchain (I only tested with gcc).
+###Build Dependencies
 
-###Dependencies
+* C toolchain (I only tested with gcc).
+* pkg-config
+* xfce4-dev-tools
 
+###Runtime Dependencies
 * glib2
 * gtk+2
 * libxfce4ui-4.8
