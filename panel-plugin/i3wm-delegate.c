@@ -77,7 +77,8 @@ on_ipc_shutdown_proxy(i3ipcConnection *connection, gpointer i3w);
  *
  * Construct the i3 windowmanager delegate struct.
  */
-i3windowManager * i3wm_construct(GError **err)
+i3windowManager *
+i3wm_construct(GError **err)
 {
     i3windowManager *i3wm = g_new0(i3windowManager, 1);
     GError *tmp_err = NULL;

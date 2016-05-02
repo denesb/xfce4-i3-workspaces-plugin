@@ -114,7 +114,7 @@ i3_workspaces_config_load(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
             "strip_workspace_numbers", FALSE);
 
     xfce_rc_close(rc);
-    
+
     return TRUE;
 }
 
@@ -135,7 +135,7 @@ i3_workspaces_config_save(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
             config->strip_workspace_numbers);
 
     xfce_rc_close(rc);
-    
+
     return TRUE;
 }
 
