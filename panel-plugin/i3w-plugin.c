@@ -315,7 +315,9 @@ add_workspaces(i3WorkspacesPlugin *i3_workspaces)
     for (witem = wlist; witem != NULL; witem = witem->next)
     {
         i3workspace *workspace = (i3workspace *) witem->data;
-        if (workspace)
+        if (workspace &&
+            (i3_workspaces->config->output[0] == 0 ||
+             g_strcmp0(i3_workspaces->config->output, workspace->output)))
         {
             GtkWidget * button;
             button = xfce_panel_create_button();

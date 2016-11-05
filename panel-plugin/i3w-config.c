@@ -43,6 +43,8 @@ void
 urgent_color_changed(GtkWidget *button, i3WorkspacesConfig *config);
 void
 strip_workspace_numbers_changed(GtkWidget *button, i3WorkspacesConfig *config);
+void
+output_changed(GtkWidget *entry, i3WorkspacesConfig *config);
 
 void
 config_dialog_closed(GtkWidget *dialog, int response, ConfigDialogClosedParam *param);
@@ -94,6 +96,7 @@ i3_workspaces_config_new()
 void
 i3_workspaces_config_free(i3WorkspacesConfig *config)
 {
+    g_free(config->output);
     g_free(config);
 }
 
@@ -112,6 +115,7 @@ i3_workspaces_config_load(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
     config->urgent_color = xfce_rc_read_int_entry(rc, "urgent_color", 0xff0000);
     config->strip_workspace_numbers = xfce_rc_read_bool_entry(rc,
             "strip_workspace_numbers", FALSE);
+    config->output = g_strdup(xfce_rc_read_entry(rc, "output", ""));
 
     xfce_rc_close(rc);
 
@@ -133,6 +137,7 @@ i3_workspaces_config_save(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
     xfce_rc_write_int_entry(rc, "urgent_color", config->urgent_color);
     xfce_rc_write_bool_entry(rc, "strip_workspace_numbers",
             config->strip_workspace_numbers);
+    xfce_rc_write_entry(rc, "output", config->output);
 
     xfce_rc_close(rc);
 
@@ -206,6 +211,20 @@ i3_workspaces_config_show(i3WorkspacesConfig *config, XfcePanelPlugin *plugin,
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), config->strip_workspace_numbers == TRUE);
     g_signal_connect(G_OBJECT(button), "toggled", G_CALLBACK(strip_workspace_numbers_changed), config);
 
+    /* output */
+    hbox = gtk_hbox_new(FALSE, 3);
+    gtk_container_add(GTK_CONTAINER(dialog_vbox), hbox);
+    gtk_container_set_border_width(GTK_CONTAINER(hbox), 3);
+
+    label = gtk_label_new(_("Output:"));
+    gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0);
+
+    button = gtk_entry_new();
+    gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
+    gtk_entry_set_text(GTK_ENTRY(button), config->output);
+    g_signal_connect(G_OBJECT(button), "changed", G_CALLBACK(output_changed), config);
+
+
     /* close event */
     ConfigDialogClosedParam *param = g_new(ConfigDialogClosedParam, 1);
     param->plugin = plugin;
@@ -221,6 +240,12 @@ void
 strip_workspace_numbers_changed(GtkWidget *button, i3WorkspacesConfig *config)
 {
     config->strip_workspace_numbers = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button));
+}
+
+void
+output_changed(GtkWidget *entry, i3WorkspacesConfig *config)
+{
+    config->output = g_strdup(gtk_entry_get_text(GTK_ENTRY(entry)));
 }
 
 void
