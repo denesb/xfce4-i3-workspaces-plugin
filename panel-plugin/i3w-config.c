@@ -27,7 +27,6 @@
 #endif
 
 #include "i3w-config.h"
-#include "i3w-plugin.h"
 
 typedef struct {
     i3WorkspacesConfig *config;
