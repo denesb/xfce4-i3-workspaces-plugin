@@ -323,6 +323,7 @@ create_workspace(i3ipcWorkspaceReply * wreply)
     workspace->name = g_strdup(wreply->name);
     workspace->focused = wreply->focused;
     workspace->urgent = wreply->urgent;
+    workspace->output = g_strdup(wreply->output);
 
     return workspace;
 }
@@ -337,6 +338,7 @@ void
 destroy_workspace(i3workspace *workspace)
 {
     g_free(workspace->name);
+    g_free(workspace->output);
     g_free(workspace);
 }
 

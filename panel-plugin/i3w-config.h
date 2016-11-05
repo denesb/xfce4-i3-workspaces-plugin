@@ -27,6 +27,7 @@ typedef struct
     guint32 focused_color;
     guint32 urgent_color;
     gboolean strip_workspace_numbers;
+    gchar *output;
 }
 i3WorkspacesConfig;
 

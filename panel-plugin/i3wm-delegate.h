@@ -27,6 +27,7 @@ typedef struct _i3workspace
     gchar *name;
     gboolean focused;
     gboolean urgent;
+    gchar *output;
 } i3workspace;
 
 typedef void (*i3wmWorkspaceCallback) (i3workspace *workspace, gpointer data);
