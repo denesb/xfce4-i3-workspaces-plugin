@@ -63,6 +63,9 @@ static void
 on_urgent_workspace(i3windowManager *i3w);
 static void
 on_rename_workspace(i3windowManager *i3w);
+static void
+on_move_workspace(i3windowManager *i3w);
+
 
 static void
 on_ipc_shutdown_proxy(i3ipcConnection *connection, gpointer i3w);
@@ -532,6 +535,7 @@ on_workspace_event(i3ipcConnection *conn, i3ipcWorkspaceEvent *e, gpointer i3wm)
     else if (strncmp(e->change, "empty", 5) == 0) on_empty_workspace((i3windowManager *) i3wm);
     else if (strncmp(e->change, "urgent", 6) == 0) on_urgent_workspace((i3windowManager *) i3wm);
     else if (strncmp(e->change, "rename", 6) == 0) on_rename_workspace((i3windowManager *) i3wm);
+    else if (strncmp(e->change, "move", 4) == 0) on_move_workspace((i3windowManager *) i3wm);
     else g_printf("Unknown event: %s\n", e->change);
 }
 
@@ -677,6 +681,45 @@ on_rename_workspace(i3windowManager *i3wm)
     // of the code is worth it.
     on_init_workspace(i3wm);
     on_empty_workspace(i3wm);
+}
+
+/**
+ * on_move_workspace:
+ * @i3wm: the window manager delegate struct
+ *
+ * Moved workspace event handler.
+ */
+void
+on_move_workspace(i3windowManager *i3wm)
+{
+    GError **err = NULL;
+    GSList *wlist = i3ipc_connection_get_workspaces(i3wm->connection, err);
+
+    i3ipcWorkspaceReply *wtheir;
+    i3workspace *wour;
+
+    // find the workspace with the same name but new output
+    GSList *witem;
+    for (witem = wlist; witem != NULL; witem = witem->next)
+    {
+        wtheir = (i3ipcWorkspaceReply *) witem->data;
+        wour = (i3workspace *)g_slist_find_custom(i3wm->wlist, wtheir->name, (GCompareFunc) workspace_str_cmp)->data;
+
+        if (g_strcmp0(wtheir->output, wour->output) != 0)
+            break;
+    }
+
+    // remove our workspace
+    i3wm->wlist = g_slist_remove(i3wm->wlist, wour);
+    invoke_callback(i3wm->on_workspace_destroyed, wour);
+    destroy_workspace(wour);
+
+    // add their workspace
+    wour = create_workspace(wtheir);
+    i3wm->wlist = g_slist_insert_sorted(i3wm->wlist, wour, (GCompareFunc) i3wm_workspace_cmp);
+    invoke_callback(i3wm->on_workspace_created, wour);
+
+    g_slist_free_full(wlist, (GDestroyNotify) i3ipc_workspace_reply_free);
 }
 
 /**
