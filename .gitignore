@@ -46,6 +46,7 @@ po/POTFILES
 po/stamp-it
 Makefile
 Makefile.in
+Makefile.in.in
 aclocal.m4
 autom4te.cache/
 config.*
