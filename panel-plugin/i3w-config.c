@@ -144,6 +144,23 @@ i3_workspaces_config_save(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
     return TRUE;
 }
 
+void add_color_picker(i3WorkspacesConfig *config, GtkWidget *dialog_vbox, char *text, guint32 color, gpointer callback) {
+    GtkWidget *hbox, *button, *label;
+
+    /* focused color */
+    hbox = gtk_hbox_new(FALSE, 3);
+    gtk_container_add(GTK_CONTAINER(dialog_vbox), hbox);
+    gtk_container_set_border_width(GTK_CONTAINER(hbox), 3);
+
+    label = gtk_label_new(_(text));
+    gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0);
+
+    button = gtk_color_button_new_with_color(unserialize_gdkcolor(
+                color));
+    gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
+    g_signal_connect(G_OBJECT(button), "color-set", G_CALLBACK(callback), config);
+}
+
 void
 i3_workspaces_config_show(i3WorkspacesConfig *config, XfcePanelPlugin *plugin,
         ConfigChangedCallback cb, gpointer cb_data)
@@ -162,44 +179,9 @@ i3_workspaces_config_show(i3WorkspacesConfig *config, XfcePanelPlugin *plugin,
 
     dialog_vbox = GTK_DIALOG(dialog)->vbox;
 
-    /* normal color */
-    hbox = gtk_hbox_new(FALSE, 3);
-    gtk_container_add(GTK_CONTAINER(dialog_vbox), hbox);
-    gtk_container_set_border_width(GTK_CONTAINER(hbox), 3);
-
-    label = gtk_label_new(_("Normal Workspace Color:"));
-    gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0);
-
-    button = gtk_color_button_new_with_color(unserialize_gdkcolor(
-                config->normal_color));
-    gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
-    g_signal_connect(G_OBJECT(button), "color-set", G_CALLBACK(normal_color_changed), config);
-
-    /* focused color */
-    hbox = gtk_hbox_new(FALSE, 3);
-    gtk_container_add(GTK_CONTAINER(dialog_vbox), hbox);
-    gtk_container_set_border_width(GTK_CONTAINER(hbox), 3);
-
-    label = gtk_label_new(_("Focused Workspace Color:"));
-    gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0);
-
-    button = gtk_color_button_new_with_color(unserialize_gdkcolor(
-                config->focused_color));
-    gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
-    g_signal_connect(G_OBJECT(button), "color-set", G_CALLBACK(focused_color_changed), config);
-
-    /* urgent color */
-    hbox = gtk_hbox_new(FALSE, 3);
-    gtk_container_add(GTK_CONTAINER(dialog_vbox), hbox);
-    gtk_container_set_border_width(GTK_CONTAINER(hbox), 3);
-
-    label = gtk_label_new(_("Urgent Workspace Color:"));
-    gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0);
-
-    button = gtk_color_button_new_with_color(unserialize_gdkcolor(
-                config->urgent_color));
-    gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
-    g_signal_connect(G_OBJECT(button), "color-set", G_CALLBACK(urgent_color_changed), config);
+	add_color_picker(config, dialog_vbox, "Normal Workspace Color:", config->normal_color, normal_color_changed);
+	add_color_picker(config, dialog_vbox, "Focused Workspace Color:", config->focused_color, focused_color_changed);
+	add_color_picker(config, dialog_vbox, "Urgent Workspace Color:", config->urgent_color, urgent_color_changed);
 
     /* strip workspace numbers */
     hbox = gtk_hbox_new(FALSE, 3);
