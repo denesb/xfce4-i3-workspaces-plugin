@@ -66,6 +66,11 @@ on_rename_workspace(i3windowManager *i3w);
 static void
 on_move_workspace(i3windowManager *i3w);
 
+/*
+ * Mode event handler
+ */
+static void
+on_mode_event(i3ipcConnection *conn, i3ipcGenericEvent *e, gpointer i3w);
 
 static void
 on_ipc_shutdown_proxy(i3ipcConnection *connection, gpointer i3w);
@@ -254,6 +259,21 @@ i3wm_set_on_workspace_renamed(i3windowManager *i3wm, i3wmWorkspaceCallback callb
 {
     i3wm->on_workspace_renamed.function = callback;
     i3wm->on_workspace_renamed.data = data;
+}
+
+/**
+ * i3wm_set_on_mode_changed:
+ * @i3wm: the window manager delegate struct
+ * @callback: the callback
+ * @data: the data to be passed to the callback function
+ *
+ * Set the binding mode changed callback.
+ */
+void
+i3wm_set_on_mode_changed(i3windowManager *i3wm, i3wmModeCallback_fun callback, gpointer data)
+{
+    i3wm->on_mode_changed.function = callback;
+    i3wm->on_mode_changed.data = data;
 }
 
 /**
@@ -491,6 +511,7 @@ subscribe_to_events(i3windowManager *i3wm, GError **err)
     GError *ipc_err = NULL;
     i3ipcCommandReply *reply = NULL;
 
+	// subscribe to workspace changes
     reply = i3ipc_connection_subscribe(i3wm->connection, I3IPC_EVENT_WORKSPACE, &ipc_err);
     if (ipc_err != NULL)
     {
@@ -498,7 +519,16 @@ subscribe_to_events(i3windowManager *i3wm, GError **err)
         return;
     }
 
+	// subscribe to mode changes
+    reply = i3ipc_connection_subscribe(i3wm->connection, I3IPC_EVENT_MODE, &ipc_err);
+    if (ipc_err != NULL)
+    {
+        g_propagate_error(err, ipc_err);
+        return;
+    }
+
     g_signal_connect_after(i3wm->connection, "workspace", G_CALLBACK(on_workspace_event), i3wm);
+    g_signal_connect_after(i3wm->connection, "mode", G_CALLBACK(on_mode_event), i3wm);
 
     i3ipc_command_reply_free(reply);
 }
@@ -720,6 +750,20 @@ on_move_workspace(i3windowManager *i3wm)
     invoke_callback(i3wm->on_workspace_created, wour);
 
     g_slist_free_full(wlist, (GDestroyNotify) i3ipc_workspace_reply_free);
+}
+
+/**
+ * on_mode_event:
+ * @conn: the connection with the window manager
+ * @e: event data
+ * @i3w: the window manager delegate struct
+ *
+ * The binding mode event callback.
+ */
+void
+on_mode_event(i3ipcConnection *conn, i3ipcGenericEvent *e, gpointer i3w) {
+    i3windowManager *i3wm = (i3windowManager *) i3w;
+    i3wm->on_mode_changed.function(e->change, i3wm->on_mode_changed.data);
 }
 
 /**
