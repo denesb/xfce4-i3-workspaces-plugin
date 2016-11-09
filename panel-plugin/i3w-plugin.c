@@ -536,9 +536,9 @@ on_workspace_scrolled(GtkWidget *ebox, GdkEventScroll *ev, gpointer data)
     if (witem == NULL)
         return FALSE;
 
-    if (ev->direction == GDK_SCROLL_DOWN)
+    if (ev->direction == GDK_SCROLL_UP)
         witem = witem->next;
-    else if (ev->direction == GDK_SCROLL_UP)
+    else if (ev->direction == GDK_SCROLL_DOWN)
         witem = witem->prev;
     else
         return FALSE;
