@@ -80,6 +80,9 @@ static void
 on_workspace_changed(i3workspace *workspace, gpointer data);
 
 static void
+on_mode_changed(gchar *mode, gpointer data);
+
+static void
 on_ipc_shutdown(gpointer i3_w);
 
 static void
@@ -109,6 +112,8 @@ connect_callbacks(i3WorkspacesPlugin *i3_workspaces)
             on_workspace_changed, i3_workspaces);
     i3wm_set_on_workspace_urgent(i3_workspaces->i3wm,
             on_workspace_changed, i3_workspaces);
+    i3wm_set_on_mode_changed(i3_workspaces->i3wm,
+            on_mode_changed, i3_workspaces);
     i3wm_set_on_ipc_shutdown(i3_workspaces->i3wm,
             on_ipc_shutdown, i3_workspaces);
 }
@@ -154,6 +159,11 @@ construct_workspaces(XfcePanelPlugin *plugin)
     gtk_container_add(GTK_CONTAINER(i3_workspaces->ebox), i3_workspaces->hvbox);
 
     i3_workspaces->workspace_buttons = g_hash_table_new(g_direct_hash, g_direct_equal);
+
+	/* Add a label for the binding mode */
+	i3_workspaces->mode_label = gtk_label_new(NULL);
+	gtk_box_pack_end(GTK_BOX(i3_workspaces->hvbox), i3_workspaces->mode_label, FALSE, FALSE, 0);
+	gtk_widget_show(i3_workspaces->mode_label);
 
     GError *err = NULL;
     i3_workspaces->i3wm = i3wm_construct(&err);
@@ -403,6 +413,32 @@ on_workspace_changed(i3workspace *workspace, gpointer data)
     GtkWidget *button = (GtkWidget *) g_hash_table_lookup(i3_workspaces->workspace_buttons, workspace);
     set_button_label(button, workspace, i3_workspaces->config);
 }
+
+/**
+ * on_mode_changed:
+ * @mode: the mode
+ * @data: the workspaces plugin
+ *
+ * Binging mode changed event handler.
+ */
+static void
+on_mode_changed(gchar *mode, gpointer data)
+{
+    i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
+	if (!strncmp(mode, "default", 7))
+		gtk_label_set_text((GtkLabel *) i3_workspaces->mode_label, "");
+	else {
+		// allocate space for the maximum possible size of the label
+		gulong maxlen = strlen(mode) + 37;
+		gchar *label_str = (gchar *) calloc(maxlen, sizeof(gchar));
+
+		static gchar *template = "<span foreground=\"#%06X\">%s</span>";
+		g_snprintf(label_str, maxlen, template, i3_workspaces->config->mode_color, mode);
+
+		gtk_label_set_markup((GtkLabel *) i3_workspaces->mode_label, label_str);
+	}
+}
+
 
 /**
  * set_button_label:

@@ -36,6 +36,9 @@ typedef struct
     // hash table of i3workspace * => GtkButton *
     GHashTable      *workspace_buttons;
 
+	// binding mode label
+	GtkWidget       *mode_label;
+
     i3WorkspacesConfig *config;
 
     i3windowManager *i3wm;
