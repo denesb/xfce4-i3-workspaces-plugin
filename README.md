@@ -29,13 +29,13 @@ Feel free to contact me at: dns.botond at gmail dot com.
 Building
 --------
 
-###Build Dependencies
+### Build Dependencies
 
 * C toolchain (I only tested with gcc).
 * pkg-config
 * xfce4-dev-tools
 
-###Runtime Dependencies
+### Runtime Dependencies
 * glib2
 * gtk+2
 * libxfce4ui-4.8
@@ -49,14 +49,14 @@ packages
 + For the compilation to work out of the box I had to install i3ipc-glib in
 the /usr prefix too.
 
-###Building from git (needs autotools)
+### Building from git (needs autotools)
 * git clone https://github.com/denesb/xfce4-i3-workspaces-plugin.git
 * cd xfce4-i3-workspaces-plugin
 * ./autogen.sh --prefix=/usr
 * make
 * sudo make install
 
-###Building from release tarball
+### Building from release tarball
 * Download & extract tarball
 * cd xfce4-i3-workspaces-plugin
 * ./configure --prefix=/usr
@@ -67,5 +67,10 @@ the /usr prefix too.
 The --prefix=/usr is needed because if installed in /usr/local prefix the
 plugin is not discovered by xfce-panel. Maybe there is a way to tell xfce-panel
 to look in other places too, but I haven't found it just yet.
+
+Setup
+-----
+
+A good, detailed guide of how you can use i3wm together with xfce4 can be found [here](http://feeblenerd.blogspot.ro/2015/11/pretty-i3-with-xfce.html).
 
 Have fun!
