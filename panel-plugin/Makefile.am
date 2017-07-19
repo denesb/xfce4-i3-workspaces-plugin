@@ -14,9 +14,11 @@ plugindir = \
 	$(libdir)/xfce4/panel/plugins
 
 libi3workspaces_la_SOURCES = \
+	i3w-multi-monitor-utils.c \
 	i3wm-delegate.c \
 	i3w-config.c \
 	i3w-plugin.c \
+	i3w-multi-monitor-utils.h \
 	i3wm-delegate.h \
 	i3w-config.h \
 	i3w-plugin.h
@@ -32,6 +34,8 @@ libi3workspaces_la_LDFLAGS = \
        -module \
        -no-undefined \
        -export-symbols-regex '^xfce_panel_module_(preinit|init|construct)' \
+       $(LIBX11_CFLAGS)
+       $(LIBXRANDR_CFLAGS)
        $(PLATFORM_LDFLAGS)
 
 libi3workspaces_la_LIBADD = \
