@@ -126,6 +126,8 @@ connect_callbacks(i3WorkspacesPlugin *i3_workspaces)
             on_ipc_shutdown, i3_workspaces);
 }
 
+static void handle_change_output(i3WorkspacesPlugin* i3_workspaces);
+
 /**
  * construct_workspaces:
  * @plugin: the xfce plugin object
@@ -137,8 +139,6 @@ connect_callbacks(i3WorkspacesPlugin *i3_workspaces)
 static i3WorkspacesPlugin *
 construct_workspaces(XfcePanelPlugin *plugin)
 {
-
-
 
     i3WorkspacesPlugin *i3_workspaces;
     GtkOrientation orientation;
@@ -199,21 +199,10 @@ construct_workspaces(XfcePanelPlugin *plugin)
 static void
 construct(XfcePanelPlugin *plugin)
 {
-
     i3WorkspacesPlugin *i3_workspaces = construct_workspaces(plugin);
 
     /* add the ebox to the panel */
     gtk_container_add (GTK_CONTAINER(plugin), i3_workspaces->ebox);
-
-    int x, y;
-    GdkWindow* window = gtk_widget_get_window(i3_workspaces->ebox);
-    gdk_window_get_origin(window, &x, &y);
-    printf("Widget window coordinates: x:%d, y:%d\n", x, y);
-
-    i3_workspaces_outputs_t outputs = get_outputs();
-    char* output_name = get_monitor_name_at(outputs, x, y);
-    printf("Widget is located in monitor: %s\n", output_name);
-
 
     /* show the panel's right-click menu on this ebox */
     xfce_panel_plugin_add_action_widget(plugin, i3_workspaces->ebox);
@@ -233,6 +222,8 @@ construct(XfcePanelPlugin *plugin)
 
     /* show the configure menu item */
     xfce_panel_plugin_menu_show_configure(plugin);
+
+    handle_change_output(i3_workspaces);
 }
 
 /**
@@ -462,6 +453,27 @@ on_mode_changed(gchar *mode, gpointer data)
 	}
 }
 
+static void handle_change_output (i3WorkspacesPlugin* i3_workspaces) 
+{
+
+    // Re-query X Server for monitor information, since it may have changed
+    i3_workspaces_outputs_t outputs = get_outputs();
+
+    // Get the plugin's widget window and its location in root window (i.e: screen) coordinates
+    int x, y;
+    GdkWindow* window = gtk_widget_get_window(i3_workspaces->ebox);
+    gdk_window_get_root_origin(window, &x, &y);
+    printf("Widget window coordinates: x:%d, y:%d\n", x, y);
+
+    // Get the monitor name for the window location and set the config value
+    char* output_name = get_monitor_name_at(outputs, x, y);
+    printf("Widget is located in monitor: %s\n", output_name);
+
+    i3_workspaces->config->output = output_name;
+    remove_workspaces(i3_workspaces);
+    add_workspaces(i3_workspaces);
+}
+
 /**
  * on_output_changed:
  * @change: the change field, always "unspecified" for now
@@ -474,6 +486,7 @@ on_output_changed(gchar *mode, gpointer data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
     printf("Output changed\n");
+    handle_change_output(i3_workspaces);
 }
 
 
