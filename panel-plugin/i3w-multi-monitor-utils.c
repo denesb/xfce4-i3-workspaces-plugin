@@ -77,8 +77,8 @@ char* get_monitor_name_at(i3_workspaces_outputs_t outputs, int win_x, int win_y)
         int x_offs = outputs.outputs[o].x;
         int y_offs = outputs.outputs[o].y;
 
-        if (win_x >= x_offs && win_x <= x_offs + width &&
-            win_y >= y_offs && win_y <= y_offs + height) {
+        if (win_x >= x_offs && win_x < x_offs + width &&
+            win_y >= y_offs && win_y < y_offs + height) {
             return outputs.outputs[o].name;
         }
     }
