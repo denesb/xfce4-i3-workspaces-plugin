@@ -72,6 +72,12 @@ on_move_workspace(i3windowManager *i3w);
 static void
 on_mode_event(i3ipcConnection *conn, i3ipcGenericEvent *e, gpointer i3w);
 
+/*
+ * Output event handler
+ */
+static void
+on_output_event(i3ipcConnection *conn, i3ipcGenericEvent *e, gpointer i3w);
+
 static void
 on_ipc_shutdown_proxy(i3ipcConnection *connection, gpointer i3w);
 
@@ -274,6 +280,21 @@ i3wm_set_on_mode_changed(i3windowManager *i3wm, i3wmModeCallback_fun callback, g
 {
     i3wm->on_mode_changed.function = callback;
     i3wm->on_mode_changed.data = data;
+}
+
+/**
+ * i3wm_set_on_output_changed
+ * @i3wm: the window manager delegate struct
+ * @callback: the callback
+ * @data: the data to be passed to the callback function
+ *
+ * Set the binding output changed callback.
+ */
+void
+i3wm_set_on_output_changed(i3windowManager *i3wm, i3wmOutputCallback_fun callback, gpointer data)
+{
+    i3wm->on_output_changed.function = callback;
+    i3wm->on_output_changed.data = data;
 }
 
 /**
@@ -527,8 +548,17 @@ subscribe_to_events(i3windowManager *i3wm, GError **err)
         return;
     }
 
+	// subscribe to output changes
+    reply = i3ipc_connection_subscribe(i3wm->connection, I3IPC_EVENT_OUTPUT, &ipc_err);
+    if (ipc_err != NULL)
+    {
+        g_propagate_error(err, ipc_err);
+        return;
+    }
+
     g_signal_connect_after(i3wm->connection, "workspace", G_CALLBACK(on_workspace_event), i3wm);
     g_signal_connect_after(i3wm->connection, "mode", G_CALLBACK(on_mode_event), i3wm);
+    g_signal_connect_after(i3wm->connection, "output", G_CALLBACK(on_output_event), i3wm);
 
     i3ipc_command_reply_free(reply);
 }
@@ -764,6 +794,20 @@ void
 on_mode_event(i3ipcConnection *conn, i3ipcGenericEvent *e, gpointer i3w) {
     i3windowManager *i3wm = (i3windowManager *) i3w;
     i3wm->on_mode_changed.function(e->change, i3wm->on_mode_changed.data);
+}
+
+/**
+ * on_output_event:
+ * @conn: the connection with the window manager
+ * @e: event data
+ * @i3w: the window manager delegate struct
+ *
+ * The output callback.
+ */
+void 
+on_output_event(i3ipcConnection *conn, i3ipcGenericEvent *e, gpointer i3w) {
+    i3windowManager *i3wm = (i3windowManager *) i3w;
+    i3wm->on_output_changed.function(e->change, i3wm->on_output_changed.data);
 }
 
 /**

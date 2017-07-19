@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdio.h>
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -27,6 +29,7 @@
 #include <glib/gprintf.h>
 
 #include "i3w-plugin.h"
+#include "i3w-multi-monitor-utils.h"
 
 /* prototypes */
 
@@ -83,6 +86,9 @@ static void
 on_mode_changed(gchar *mode, gpointer data);
 
 static void
+on_output_changed(gchar *mode, gpointer data);
+
+static void
 on_ipc_shutdown(gpointer i3_w);
 
 static void
@@ -114,6 +120,8 @@ connect_callbacks(i3WorkspacesPlugin *i3_workspaces)
             on_workspace_changed, i3_workspaces);
     i3wm_set_on_mode_changed(i3_workspaces->i3wm,
             on_mode_changed, i3_workspaces);
+    i3wm_set_on_output_changed(i3_workspaces->i3wm, 
+            on_output_changed, i3_workspaces);
     i3wm_set_on_ipc_shutdown(i3_workspaces->i3wm,
             on_ipc_shutdown, i3_workspaces);
 }
@@ -129,6 +137,9 @@ connect_callbacks(i3WorkspacesPlugin *i3_workspaces)
 static i3WorkspacesPlugin *
 construct_workspaces(XfcePanelPlugin *plugin)
 {
+
+
+
     i3WorkspacesPlugin *i3_workspaces;
     GtkOrientation orientation;
 
@@ -188,10 +199,21 @@ construct_workspaces(XfcePanelPlugin *plugin)
 static void
 construct(XfcePanelPlugin *plugin)
 {
+
     i3WorkspacesPlugin *i3_workspaces = construct_workspaces(plugin);
 
     /* add the ebox to the panel */
     gtk_container_add (GTK_CONTAINER(plugin), i3_workspaces->ebox);
+
+    int x, y;
+    GdkWindow* window = gtk_widget_get_window(i3_workspaces->ebox);
+    gdk_window_get_origin(window, &x, &y);
+    printf("Widget window coordinates: x:%d, y:%d\n", x, y);
+
+    i3_workspaces_outputs_t outputs = get_outputs();
+    char* output_name = get_monitor_name_at(outputs, x, y);
+    printf("Widget is located in monitor: %s\n", output_name);
+
 
     /* show the panel's right-click menu on this ebox */
     xfce_panel_plugin_add_action_widget(plugin, i3_workspaces->ebox);
@@ -292,6 +314,7 @@ orientation_changed(XfcePanelPlugin *plugin,
 static void
 configure_plugin(XfcePanelPlugin *plugin, i3WorkspacesPlugin *i3_workspaces)
 {
+
     i3_workspaces_config_show(i3_workspaces->config, plugin,
             config_changed, (gpointer)i3_workspaces);
 }
@@ -437,6 +460,20 @@ on_mode_changed(gchar *mode, gpointer data)
 
 		gtk_label_set_markup((GtkLabel *) i3_workspaces->mode_label, label_str);
 	}
+}
+
+/**
+ * on_output_changed:
+ * @change: the change field, always "unspecified" for now
+ * @data: the workspaces plugin
+ *
+ * Binging mode changed event handler.
+ */
+static void
+on_output_changed(gchar *mode, gpointer data)
+{
+    i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
+    printf("Output changed\n");
 }
 
 
