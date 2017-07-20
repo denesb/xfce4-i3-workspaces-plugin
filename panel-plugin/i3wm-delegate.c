@@ -806,7 +806,38 @@ on_mode_event(i3ipcConnection *conn, i3ipcGenericEvent *e, gpointer i3w) {
  */
 void 
 on_output_event(i3ipcConnection *conn, i3ipcGenericEvent *e, gpointer i3w) {
+
     i3windowManager *i3wm = (i3windowManager *) i3w;
+
+    // A Change in the output means that many workspaces will be moved at the same time
+    GError **err = NULL;
+    GSList *wlist = i3ipc_connection_get_workspaces(i3wm->connection, err);
+
+    i3ipcWorkspaceReply *wtheir;
+    i3workspace *wour;
+
+    // Find all the workspaces with the same name but new output
+    GSList *witem;
+    for (witem = wlist; witem != NULL; witem = witem->next)
+    {
+        wtheir = (i3ipcWorkspaceReply *) witem->data;
+        wour = (i3workspace *)g_slist_find_custom(i3wm->wlist, wtheir->name, (GCompareFunc) workspace_str_cmp)->data;
+
+        if (g_strcmp0(wtheir->output, wour->output) != 0) {
+            // remove our workspace
+            i3wm->wlist = g_slist_remove(i3wm->wlist, wour);
+            invoke_callback(i3wm->on_workspace_destroyed, wour);
+            destroy_workspace(wour);
+
+            // add their workspace
+            wour = create_workspace(wtheir);
+            i3wm->wlist = g_slist_insert_sorted(i3wm->wlist, wour, (GCompareFunc) i3wm_workspace_cmp);
+            invoke_callback(i3wm->on_workspace_created, wour);
+        }
+    }
+
+    g_slist_free_full(wlist, (GDestroyNotify) i3ipc_workspace_reply_free);
+
     i3wm->on_output_changed.function(e->change, i3wm->on_output_changed.data);
 }
 
