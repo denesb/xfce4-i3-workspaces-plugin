@@ -463,15 +463,17 @@ static void handle_change_output (i3WorkspacesPlugin* i3_workspaces)
     int x, y;
     GdkWindow* window = gtk_widget_get_window(i3_workspaces->ebox);
     gdk_window_get_root_origin(window, &x, &y);
-    printf("Widget window coordinates: x:%d, y:%d\n", x, y);
+    //printf("Widget window coordinates: x:%d, y:%d\n", x, y);
 
     // Get the monitor name for the window location and set the config value
     char* output_name = get_monitor_name_at(outputs, x, y);
-    printf("Widget is located in monitor: %s\n", output_name);
+    //printf("Widget is located in monitor: %s\n", output_name);
 
     i3_workspaces->config->output = output_name;
     remove_workspaces(i3_workspaces);
     add_workspaces(i3_workspaces);
+
+    free_outputs(outputs);
 }
 
 /**
@@ -485,7 +487,6 @@ static void
 on_output_changed(gchar *mode, gpointer data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
-    printf("Output changed\n");
     handle_change_output(i3_workspaces);
 }
 

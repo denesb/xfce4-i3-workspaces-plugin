@@ -503,8 +503,6 @@ init_workspaces(i3windowManager *i3wm, GError **err)
 
     i3wm->wlist = NULL;
 
-    printf("It works!\n");
-
     GError *get_err = NULL;
     GSList *wlist = i3ipc_connection_get_workspaces(i3wm->connection, &get_err);
 

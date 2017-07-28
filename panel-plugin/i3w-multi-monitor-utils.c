@@ -16,6 +16,8 @@ int is_connected (Connection c) {
     return c == RR_Connected;
 }
 
+
+
 i3_workspaces_outputs_t get_outputs() {
     // Get Xlib information
     Display* dpy = XOpenDisplay (NULL); 
@@ -85,9 +87,6 @@ char* get_monitor_name_at(i3_workspaces_outputs_t outputs, int win_x, int win_y)
     return NULL;
 }
 
-int main () {
-    i3_workspaces_outputs_t outputs = get_outputs();
-
-    printf("%s\n", get_monitor_name_at(outputs, 2000, 10));
-
+void free_outputs(i3_workspaces_outputs_t outputs) {
+    free(outputs.outputs);
 }
