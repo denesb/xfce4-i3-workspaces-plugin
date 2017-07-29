@@ -46,6 +46,8 @@ mode_color_changed(GtkWidget *button, i3WorkspacesConfig *config);
 void
 strip_workspace_numbers_changed(GtkWidget *button, i3WorkspacesConfig *config);
 void
+auto_detect_outputs_changed(GtkWidget *button, i3WorkspacesConfig *config);
+void
 output_changed(GtkWidget *entry, i3WorkspacesConfig *config);
 
 void
@@ -141,6 +143,8 @@ i3_workspaces_config_save(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
     xfce_rc_write_int_entry(rc, "mode_color", config->mode_color);
     xfce_rc_write_bool_entry(rc, "strip_workspace_numbers",
             config->strip_workspace_numbers);
+    xfce_rc_write_bool_entry(rc, "auto_detect_outputs",
+                             config->auto_detect_outputs);
     xfce_rc_write_entry(rc, "output", config->output);
 
     xfce_rc_close(rc);
@@ -198,6 +202,16 @@ i3_workspaces_config_show(i3WorkspacesConfig *config, XfcePanelPlugin *plugin,
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), config->strip_workspace_numbers == TRUE);
     g_signal_connect(G_OBJECT(button), "toggled", G_CALLBACK(strip_workspace_numbers_changed), config);
 
+    /* auto detect output */
+    hbox = gtk_hbox_new(FALSE, 3);
+    gtk_container_add(GTK_CONTAINER(dialog_vbox), hbox);
+    gtk_container_set_border_width(GTK_CONTAINER(hbox), 3);
+
+    button = gtk_check_button_new_with_mnemonic(_("Auto detect outputs"));
+    gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), config->auto_detect_outputs == TRUE);
+    g_signal_connect(G_OBJECT(button), "toggled", G_CALLBACK(auto_detect_outputs_changed), config);
+
     /* output */
     hbox = gtk_hbox_new(FALSE, 3);
     gtk_container_add(GTK_CONTAINER(dialog_vbox), hbox);
@@ -227,6 +241,12 @@ void
 strip_workspace_numbers_changed(GtkWidget *button, i3WorkspacesConfig *config)
 {
     config->strip_workspace_numbers = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button));
+}
+
+void
+auto_detect_outputs_changed(GtkWidget *button, i3WorkspacesConfig *config)
+{
+  config->auto_detect_outputs = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button));
 }
 
 void

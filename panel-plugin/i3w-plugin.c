@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -26,7 +27,6 @@
 #include <glib/gprintf.h>
 
 #include "i3w-plugin.h"
-#include "i3w-multi-monitor-utils.h"
 
 /* prototypes */
 
@@ -91,6 +91,9 @@ on_ipc_shutdown(gpointer i3_w);
 static void
 recover_from_disconnect(i3WorkspacesPlugin *i3_workspaces);
 
+static void
+handle_change_output(i3WorkspacesPlugin* i3_workspaces);
+
 /* register the plugin */
 XFCE_PANEL_PLUGIN_REGISTER(construct);
 
@@ -123,7 +126,6 @@ connect_callbacks(i3WorkspacesPlugin *i3_workspaces)
             on_ipc_shutdown, i3_workspaces);
 }
 
-static void handle_change_output(i3WorkspacesPlugin* i3_workspaces);
 
 /**
  * construct_workspaces:
@@ -220,6 +222,7 @@ construct(XfcePanelPlugin *plugin)
     /* show the configure menu item */
     xfce_panel_plugin_menu_show_configure(plugin);
 
+    /* Auto-detect output configuration */
     handle_change_output(i3_workspaces);
 }
 
@@ -317,6 +320,8 @@ static void
 config_changed(gpointer cb_data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) cb_data;
+
+    handle_change_output(i3_workspaces);
     remove_workspaces(i3_workspaces);
     add_workspaces(i3_workspaces);
 }
@@ -421,11 +426,14 @@ on_mode_changed(gchar *mode, gpointer data)
  * on_mode_changed:
  * @i3_workspaces: the workspaces plugin
  *
- * Recomputes the panel's output based on XRandR's current data
+ * Recomputes the panel's output based on XRandR's current data.
+ * Does not run if auto_detect_outputs is set to false.
  */
 static void
 handle_change_output (i3WorkspacesPlugin* i3_workspaces)
 {
+
+    if(!i3_workspaces->config->auto_detect_outputs) return;
 
     // Re-query X Server for monitor information, since it may have changed
     i3_workspaces_outputs_t outputs = get_outputs();

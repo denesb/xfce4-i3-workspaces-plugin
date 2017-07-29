@@ -1,7 +1,17 @@
 #include "i3w-multi-monitor-utils.h"
 
-XRRCrtcInfo* find_crtc (Display* dpy, XRRScreenResources* res, RRCrtc xid) {
-    //assert(res);
+/**
+ * find_crtc:
+ * @dpy: The X Display
+ * @res: The XRandR screen resources
+ * @xid: The X Id of the crtc
+ *
+ * Find a crtc's information given its xid
+ *
+ * Returns: The crtc's information struct
+ */
+XRRCrtcInfo*
+find_crtc (Display* dpy, XRRScreenResources* res, RRCrtc xid) {
     XRRCrtcInfo* found = NULL;
     int c;
     for (c = 0; c < res->ncrtc && !found; ++c) {
@@ -12,13 +22,31 @@ XRRCrtcInfo* find_crtc (Display* dpy, XRRScreenResources* res, RRCrtc xid) {
     return found;
 }
 
-int is_connected (Connection c) {
+
+/**
+ * is_connected:
+ * @plugin: the xfce plugin object
+ *
+ * Does c mean connected display?
+ *
+ * Returns: True iff c indicated connected display
+ */
+int
+is_connected (Connection c) {
     return c == RR_Connected;
 }
 
 
-
-i3_workspaces_outputs_t get_outputs() {
+/**
+ * get_outputs:
+ *
+ * Gets the output information from XRandR. For each monitor, the
+ * output name, screen position and current resolution.
+ *
+ * Returns: The outputs structure. Must be freed with free_outputs.
+ */
+i3_workspaces_outputs_t
+get_outputs() {
     // Get Xlib information
     Display* dpy = XOpenDisplay (NULL); 
 	int screen = DefaultScreen (dpy);
@@ -71,7 +99,30 @@ i3_workspaces_outputs_t get_outputs() {
 
 }
 
-char* get_monitor_name_at(i3_workspaces_outputs_t outputs, int win_x, int win_y) {
+/**
+ * free_outputs:
+ * @outputs: The outputs structure 
+ *
+ * Frees the allocated memory for an outputs structure
+ *
+ */
+void
+free_outputs(i3_workspaces_outputs_t outputs) {
+  free(outputs.outputs);
+}
+
+/**
+ * get_monitor_name_at:
+ * @outputs: The outputs information, as returned by get_outputs
+ * @win_x: The X position of the coordinates to check
+ * @win_y: The Y position of the coordinates to check
+ *
+ * Obtains the monitor name at a given X Screen coordinates.
+ *
+ * Returns: A string, representing the monitor name.
+ */
+char*
+get_monitor_name_at(i3_workspaces_outputs_t outputs, int win_x, int win_y) {
     int o;
     for (o = 0; o < outputs.num_outputs; ++o) {
         int width = outputs.outputs[o].width;
@@ -87,6 +138,3 @@ char* get_monitor_name_at(i3_workspaces_outputs_t outputs, int win_x, int win_y)
     return NULL;
 }
 
-void free_outputs(i3_workspaces_outputs_t outputs) {
-    free(outputs.outputs);
-}
