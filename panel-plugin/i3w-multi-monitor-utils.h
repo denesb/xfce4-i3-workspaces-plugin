@@ -31,6 +31,8 @@ typedef struct {
 
 i3_workspaces_outputs_t get_outputs();
 
+void free_outputs();
+
 char* get_monitor_name_at(i3_workspaces_outputs_t outputs, int win_x, int win_y);
 
 #endif 

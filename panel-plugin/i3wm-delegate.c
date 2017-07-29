@@ -46,7 +46,7 @@ static void
 subscribe_to_events(i3windowManager *i3w, GError **err);
 
 static void
-invoke_callback(const i3wmCallback callback, i3workspace *workspace);
+invoke_callback(const i3wmCallback callback);
 
 /*
  * Workspace event handlers
@@ -577,11 +577,11 @@ subscribe_to_events(i3windowManager *i3wm, GError **err)
  * Invokes the specified callback with the workspace as parameter.
  */
 static void
-invoke_callback(const i3wmCallback callback, i3workspace *workspace)
+invoke_callback(const i3wmCallback callback)
 {
     if (callback.function)
     {
-        callback.function(workspace, callback.data);
+        callback.function(callback.data);
     }
 }
 
@@ -618,7 +618,7 @@ on_focus_workspace(i3windowManager *i3wm, i3ipcCon *current, i3ipcCon *old)
 {
   GError *tmp_err = NULL;
   init_workspaces(i3wm, &tmp_err);
-  invoke_callback(i3wm->on_workspace_created, NULL);
+  invoke_callback(i3wm->on_workspace_focused);
 }
 
 /**
@@ -632,7 +632,7 @@ on_init_workspace(i3windowManager *i3wm)
 {
   GError *tmp_err = NULL;
   init_workspaces(i3wm, &tmp_err);
-  invoke_callback(i3wm->on_workspace_created, NULL);
+  invoke_callback(i3wm->on_workspace_created);
 }
 
 /**
@@ -646,7 +646,7 @@ on_empty_workspace(i3windowManager *i3wm)
 {
   GError *tmp_err = NULL;
   init_workspaces(i3wm, &tmp_err);
-  invoke_callback(i3wm->on_workspace_created, NULL);
+  invoke_callback(i3wm->on_workspace_destroyed);
 }
 
 /**
@@ -655,14 +655,14 @@ on_empty_workspace(i3windowManager *i3wm)
  *
  * Urgent workspace event handler.
  * This can mean two thigs: either a workspace became urgent or it was urgent and
- * not it isn't.
+ * now it isn't.
  */
 void
 on_urgent_workspace(i3windowManager *i3wm)
 {
   GError *tmp_err = NULL;
   init_workspaces(i3wm, &tmp_err);
-  invoke_callback(i3wm->on_workspace_created, NULL);
+  invoke_callback(i3wm->on_workspace_urgent);
 }
 
 /**
@@ -676,7 +676,9 @@ on_rename_workspace(i3windowManager *i3wm)
 {
   GError *tmp_err = NULL;
   init_workspaces(i3wm, &tmp_err);
-  invoke_callback(i3wm->on_workspace_created, NULL);
+  // Since created already removes/adds all the worskpaces,
+  // we don't need to also call the "destroyed" callback
+  invoke_callback(i3wm->on_workspace_created);
 }
 
 /**
@@ -690,7 +692,9 @@ on_move_workspace(i3windowManager *i3wm)
 {
   GError *tmp_err = NULL;
   init_workspaces(i3wm, &tmp_err);
-  invoke_callback(i3wm->on_workspace_created, NULL);
+  // Since created already removes/adds all the worskpaces,
+  // we don't need to also call the "destroyed" callback
+  invoke_callback(i3wm->on_workspace_created);
 }
 
 /**
@@ -720,7 +724,7 @@ on_output_event(i3ipcConnection *conn, i3ipcGenericEvent *e, gpointer i3w) {
     i3windowManager *i3wm = (i3windowManager *) i3w;
     GError *tmp_err = NULL;
     init_workspaces(i3wm, &tmp_err);
-    invoke_callback(i3wm->on_workspace_created, NULL);
+    invoke_callback(i3wm->on_workspace_created);
 }
 
 /**

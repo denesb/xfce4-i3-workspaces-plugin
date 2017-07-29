@@ -30,7 +30,7 @@ typedef struct _i3workspace
     gchar *output;
 } i3workspace;
 
-typedef void (*i3wmWorkspaceCallback) (i3workspace *workspace, gpointer data);
+typedef void (*i3wmWorkspaceCallback) (gpointer data);
 typedef void (*i3wmModeCallback_fun) (gchar *mode, gpointer data);
 typedef void (*i3wmOutputCallback_fun) (gchar *mode, gpointer data);
 typedef void (*i3wmIpcShutdownCallback) (gpointer data);

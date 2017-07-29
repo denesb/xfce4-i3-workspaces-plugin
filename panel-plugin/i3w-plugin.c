@@ -15,9 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#include <stdio.h>
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -76,11 +73,11 @@ static gboolean
 on_workspace_scrolled(GtkWidget *ebox, GdkEventScroll *ev, gpointer data);
 
 static void
-on_workspace_created(i3workspace *workspace, gpointer data);
+on_workspace_created(gpointer data);
 static void
-on_workspace_destroyed(i3workspace *workspace, gpointer data);
+on_workspace_destroyed(gpointer data);
 static void
-on_workspace_changed(i3workspace *workspace, gpointer data);
+on_workspace_changed(gpointer data);
 
 static void
 on_mode_changed(gchar *mode, gpointer data);
@@ -109,9 +106,9 @@ static void
 connect_callbacks(i3WorkspacesPlugin *i3_workspaces)
 {
     i3wm_set_on_workspace_created(i3_workspaces->i3wm,
-            on_workspace_created, i3_workspaces);
+            on_workspace_changed, i3_workspaces);
     i3wm_set_on_workspace_destroyed(i3_workspaces->i3wm,
-            on_workspace_destroyed, i3_workspaces);
+            on_workspace_changed, i3_workspaces);
     i3wm_set_on_workspace_blurred(i3_workspaces->i3wm,
             on_workspace_changed, i3_workspaces);
     i3wm_set_on_workspace_focused(i3_workspaces->i3wm,
@@ -120,7 +117,7 @@ connect_callbacks(i3WorkspacesPlugin *i3_workspaces)
             on_workspace_changed, i3_workspaces);
     i3wm_set_on_mode_changed(i3_workspaces->i3wm,
             on_mode_changed, i3_workspaces);
-    i3wm_set_on_output_changed(i3_workspaces->i3wm, 
+    i3wm_set_on_output_changed(i3_workspaces->i3wm,
             on_output_changed, i3_workspaces);
     i3wm_set_on_ipc_shutdown(i3_workspaces->i3wm,
             on_ipc_shutdown, i3_workspaces);
@@ -380,39 +377,6 @@ remove_workspaces(i3WorkspacesPlugin *i3_workspaces)
 }
 
 /**
- * on_workspace_created:
- * @workspace: the workspace
- * @data: the workspaces plugin
- *
- * Workspace created event handler.
- */
-static void
-on_workspace_created(i3workspace *workspace, gpointer data)
-{
-    i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
-
-    remove_workspaces(i3_workspaces);
-    add_workspaces(i3_workspaces);
-}
-
-/**
- * on_workspace_destroyed:
- * @workspace: the workspace
- * @data: the workspaces plugin
- *
- * Workspace destroyed event handler.
- */
-static void
-on_workspace_destroyed(i3workspace *workspace, gpointer data)
-{
-    i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
-
-    GtkWidget *button = (GtkWidget *) g_hash_table_lookup(i3_workspaces->workspace_buttons, workspace);
-    g_hash_table_remove(i3_workspaces->workspace_buttons, workspace);
-    gtk_widget_destroy(button);
-}
-
-/**
  * on_workspace_changed:
  * @workspace: the workspace
  * @data: the workspaces plugin
@@ -420,12 +384,12 @@ on_workspace_destroyed(i3workspace *workspace, gpointer data)
  * Workspace changed event handler.
  */
 static void
-on_workspace_changed(i3workspace *workspace, gpointer data)
+on_workspace_changed(gpointer data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
 
-    GtkWidget *button = (GtkWidget *) g_hash_table_lookup(i3_workspaces->workspace_buttons, workspace);
-    set_button_label(button, workspace, i3_workspaces->config);
+    remove_workspaces(i3_workspaces);
+    add_workspaces(i3_workspaces);
 }
 
 /**
@@ -453,7 +417,14 @@ on_mode_changed(gchar *mode, gpointer data)
 	}
 }
 
-static void handle_change_output (i3WorkspacesPlugin* i3_workspaces) 
+/**
+ * on_mode_changed:
+ * @i3_workspaces: the workspaces plugin
+ *
+ * Recomputes the panel's output based on XRandR's current data
+ */
+static void
+handle_change_output (i3WorkspacesPlugin* i3_workspaces)
 {
 
     // Re-query X Server for monitor information, since it may have changed
@@ -481,7 +452,7 @@ static void handle_change_output (i3WorkspacesPlugin* i3_workspaces)
  * @change: the change field, always "unspecified" for now
  * @data: the workspaces plugin
  *
- * Binging mode changed event handler.
+ * Output changed event handler.
  */
 static void
 on_output_changed(gchar *mode, gpointer data)
