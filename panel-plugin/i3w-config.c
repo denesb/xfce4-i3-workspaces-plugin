@@ -120,6 +120,8 @@ i3_workspaces_config_load(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
     config->mode_color = xfce_rc_read_int_entry(rc, "mode_color", 0xff0000);
     config->strip_workspace_numbers = xfce_rc_read_bool_entry(rc,
             "strip_workspace_numbers", FALSE);
+    config->auto_detect_outputs = xfce_rc_read_bool_entry(rc,
+            "auto_detect_outputs", FALSE);
     config->output = g_strdup(xfce_rc_read_entry(rc, "output", ""));
 
     xfce_rc_close(rc);
