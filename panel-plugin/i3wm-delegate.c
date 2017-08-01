@@ -46,7 +46,7 @@ static void
 subscribe_to_events(i3windowManager *i3w, GError **err);
 
 static void
-invoke_callback(const i3wmCallback callback, i3workspace *workspace);
+invoke_callback(const i3wmCallback callback);
 
 /*
  * Workspace event handlers
@@ -71,6 +71,12 @@ on_move_workspace(i3windowManager *i3w);
  */
 static void
 on_mode_event(i3ipcConnection *conn, i3ipcGenericEvent *e, gpointer i3w);
+
+/*
+ * Output event handler
+ */
+static void
+on_output_event(i3ipcConnection *conn, i3ipcGenericEvent *e, gpointer i3w);
 
 static void
 on_ipc_shutdown_proxy(i3ipcConnection *connection, gpointer i3w);
@@ -277,6 +283,21 @@ i3wm_set_on_mode_changed(i3windowManager *i3wm, i3wmModeCallback_fun callback, g
 }
 
 /**
+ * i3wm_set_on_output_changed
+ * @i3wm: the window manager delegate struct
+ * @callback: the callback
+ * @data: the data to be passed to the callback function
+ *
+ * Set the binding output changed callback.
+ */
+void
+i3wm_set_on_output_changed(i3windowManager *i3wm, i3wmOutputCallback_fun callback, gpointer data)
+{
+    i3wm->on_output_changed.function = callback;
+    i3wm->on_output_changed.data = data;
+}
+
+/**
  * i3wm_set_ipc_shutdown:
  * @i3wm: the window manager delegate struct
  * @callback: the callback
@@ -476,6 +497,12 @@ workspace_str_cmp(const i3workspace *w, const gchar *s)
 void
 init_workspaces(i3windowManager *i3wm, GError **err)
 {
+    if (i3wm->wlist) {
+        g_slist_free_full(i3wm->wlist, (GDestroyNotify) destroy_workspace);
+    }
+
+    i3wm->wlist = NULL;
+
     GError *get_err = NULL;
     GSList *wlist = i3ipc_connection_get_workspaces(i3wm->connection, &get_err);
 
@@ -527,8 +554,17 @@ subscribe_to_events(i3windowManager *i3wm, GError **err)
         return;
     }
 
+	// subscribe to output changes
+    reply = i3ipc_connection_subscribe(i3wm->connection, I3IPC_EVENT_OUTPUT, &ipc_err);
+    if (ipc_err != NULL)
+    {
+        g_propagate_error(err, ipc_err);
+        return;
+    }
+
     g_signal_connect_after(i3wm->connection, "workspace", G_CALLBACK(on_workspace_event), i3wm);
     g_signal_connect_after(i3wm->connection, "mode", G_CALLBACK(on_mode_event), i3wm);
+    g_signal_connect_after(i3wm->connection, "output", G_CALLBACK(on_output_event), i3wm);
 
     i3ipc_command_reply_free(reply);
 }
@@ -541,11 +577,11 @@ subscribe_to_events(i3windowManager *i3wm, GError **err)
  * Invokes the specified callback with the workspace as parameter.
  */
 static void
-invoke_callback(const i3wmCallback callback, i3workspace *workspace)
+invoke_callback(const i3wmCallback callback)
 {
     if (callback.function)
     {
-        callback.function(workspace, callback.data);
+        callback.function(callback.data);
     }
 }
 
@@ -580,21 +616,9 @@ on_workspace_event(i3ipcConnection *conn, i3ipcWorkspaceEvent *e, gpointer i3wm)
 void
 on_focus_workspace(i3windowManager *i3wm, i3ipcCon *current, i3ipcCon *old)
 {
-    const gchar *blurredName = i3ipc_con_get_name(old);
-    const gchar *focusedName = i3ipc_con_get_name(current);
-
-    GSList *wblurred_item = g_slist_find_custom(i3wm->wlist, blurredName, (GCompareFunc) workspace_str_cmp);
-    if (wblurred_item) // this will be NULL in case of the scratch workspace
-    {
-        i3workspace *wblurred = (i3workspace *) wblurred_item->data;
-        wblurred->focused = FALSE;
-        invoke_callback(i3wm->on_workspace_blurred, wblurred);
-    }
-
-    GSList *wfocused_item = g_slist_find_custom(i3wm->wlist, focusedName, (GCompareFunc) workspace_str_cmp);
-    i3workspace *wfocused = (i3workspace *) wfocused_item->data;
-    wfocused->focused = TRUE;
-    invoke_callback(i3wm->on_workspace_focused, wfocused);
+  GError *tmp_err = NULL;
+  init_workspaces(i3wm, &tmp_err);
+  invoke_callback(i3wm->on_workspace_focused);
 }
 
 /**
@@ -606,26 +630,9 @@ on_focus_workspace(i3windowManager *i3wm, i3ipcCon *current, i3ipcCon *old)
 void
 on_init_workspace(i3windowManager *i3wm)
 {
-    GError **err = NULL;
-    GSList *wlist = i3ipc_connection_get_workspaces(i3wm->connection, err);
-
-    i3ipcWorkspaceReply *wreply;
-
-    // find the new workspace
-    GSList *witem;
-    for (witem = wlist; witem != NULL; witem = witem->next)
-    {
-        wreply = (i3ipcWorkspaceReply *) witem->data;
-        if (g_slist_find_custom(i3wm->wlist, wreply->name, (GCompareFunc) workspace_str_cmp) == NULL)
-            break;
-    }
-
-    i3workspace *workspace = create_workspace(wreply);
-    i3wm->wlist = g_slist_insert_sorted(i3wm->wlist, workspace, (GCompareFunc) i3wm_workspace_cmp);
-
-    invoke_callback(i3wm->on_workspace_created, workspace);
-
-    g_slist_free_full(wlist, (GDestroyNotify) i3ipc_workspace_reply_free);
+  GError *tmp_err = NULL;
+  init_workspaces(i3wm, &tmp_err);
+  invoke_callback(i3wm->on_workspace_created);
 }
 
 /**
@@ -637,27 +644,9 @@ on_init_workspace(i3windowManager *i3wm)
 void
 on_empty_workspace(i3windowManager *i3wm)
 {
-    GError **err = NULL;
-    GSList *wlist = i3ipc_connection_get_workspaces(i3wm->connection, err);
-
-    i3ipcWorkspaceReply wreply;
-    i3workspace *workspace;
-
-    // find the removed workspace
-    GSList *witem;
-    for (witem = i3wm->wlist; witem != NULL; witem = witem->next)
-    {
-        workspace = (i3workspace *) witem->data;
-
-        if (g_slist_find_custom(wlist, workspace->name, (GCompareFunc) workspace_reply_str_cmp) == NULL)
-            break;
-    }
-
-    i3wm->wlist = g_slist_remove(i3wm->wlist, workspace);
-    invoke_callback(i3wm->on_workspace_destroyed, workspace);
-    destroy_workspace(workspace);
-
-    g_slist_free_full(wlist, (GDestroyNotify) i3ipc_workspace_reply_free);
+  GError *tmp_err = NULL;
+  init_workspaces(i3wm, &tmp_err);
+  invoke_callback(i3wm->on_workspace_destroyed);
 }
 
 /**
@@ -666,34 +655,14 @@ on_empty_workspace(i3windowManager *i3wm)
  *
  * Urgent workspace event handler.
  * This can mean two thigs: either a workspace became urgent or it was urgent and
- * not it isn't.
+ * now it isn't.
  */
 void
 on_urgent_workspace(i3windowManager *i3wm)
 {
-    GError **err = NULL;
-    GSList *wlist = i3ipc_connection_get_workspaces(i3wm->connection, err);
-
-    GSList *witem_their;
-    GSList *witem_our;
-    i3ipcWorkspaceReply *wtheir;
-    i3workspace *wour;
-
-    // find the workspace whoose urgen flag has changed
-    for (witem_their = wlist; witem_their != NULL; witem_their = witem_their->next)
-    {
-        wtheir = (i3ipcWorkspaceReply *) witem_their->data;
-
-        witem_our = g_slist_find_custom(i3wm->wlist, wtheir->name, (GCompareFunc) workspace_str_cmp);
-        wour = (i3workspace *) witem_our->data;
-        if (wtheir->urgent != wour->urgent)
-            break;
-    }
-
-    wour->urgent = wtheir->urgent;
-    invoke_callback(i3wm->on_workspace_urgent, wour);
-
-    g_slist_free_full(wlist, (GDestroyNotify) i3ipc_workspace_reply_free);
+  GError *tmp_err = NULL;
+  init_workspaces(i3wm, &tmp_err);
+  invoke_callback(i3wm->on_workspace_urgent);
 }
 
 /**
@@ -705,12 +674,11 @@ on_urgent_workspace(i3windowManager *i3wm)
 void
 on_rename_workspace(i3windowManager *i3wm)
 {
-    // From our point of view renaming a workspace is equivalent to removing
-    // the one with the old name and adding a new with the new name.
-    // Of corse this is not optimal in terms of resources but the simpleness
-    // of the code is worth it.
-    on_init_workspace(i3wm);
-    on_empty_workspace(i3wm);
+  GError *tmp_err = NULL;
+  init_workspaces(i3wm, &tmp_err);
+  // Since created already removes/adds all the worskpaces,
+  // we don't need to also call the "destroyed" callback
+  invoke_callback(i3wm->on_workspace_created);
 }
 
 /**
@@ -722,34 +690,11 @@ on_rename_workspace(i3windowManager *i3wm)
 void
 on_move_workspace(i3windowManager *i3wm)
 {
-    GError **err = NULL;
-    GSList *wlist = i3ipc_connection_get_workspaces(i3wm->connection, err);
-
-    i3ipcWorkspaceReply *wtheir;
-    i3workspace *wour;
-
-    // find the workspace with the same name but new output
-    GSList *witem;
-    for (witem = wlist; witem != NULL; witem = witem->next)
-    {
-        wtheir = (i3ipcWorkspaceReply *) witem->data;
-        wour = (i3workspace *)g_slist_find_custom(i3wm->wlist, wtheir->name, (GCompareFunc) workspace_str_cmp)->data;
-
-        if (g_strcmp0(wtheir->output, wour->output) != 0)
-            break;
-    }
-
-    // remove our workspace
-    i3wm->wlist = g_slist_remove(i3wm->wlist, wour);
-    invoke_callback(i3wm->on_workspace_destroyed, wour);
-    destroy_workspace(wour);
-
-    // add their workspace
-    wour = create_workspace(wtheir);
-    i3wm->wlist = g_slist_insert_sorted(i3wm->wlist, wour, (GCompareFunc) i3wm_workspace_cmp);
-    invoke_callback(i3wm->on_workspace_created, wour);
-
-    g_slist_free_full(wlist, (GDestroyNotify) i3ipc_workspace_reply_free);
+  GError *tmp_err = NULL;
+  init_workspaces(i3wm, &tmp_err);
+  // Since created already removes/adds all the worskpaces,
+  // we don't need to also call the "destroyed" callback
+  invoke_callback(i3wm->on_workspace_created);
 }
 
 /**
@@ -764,6 +709,22 @@ void
 on_mode_event(i3ipcConnection *conn, i3ipcGenericEvent *e, gpointer i3w) {
     i3windowManager *i3wm = (i3windowManager *) i3w;
     i3wm->on_mode_changed.function(e->change, i3wm->on_mode_changed.data);
+}
+
+/**
+ * on_output_event:
+ * @conn: the connection with the window manager
+ * @e: event data
+ * @i3w: the window manager delegate struct
+ *
+ * The output callback.
+ */
+void 
+on_output_event(i3ipcConnection *conn, i3ipcGenericEvent *e, gpointer i3w) {
+    i3windowManager *i3wm = (i3windowManager *) i3w;
+    GError *tmp_err = NULL;
+    init_workspaces(i3wm, &tmp_err);
+    invoke_callback(i3wm->on_workspace_created);
 }
 
 /**

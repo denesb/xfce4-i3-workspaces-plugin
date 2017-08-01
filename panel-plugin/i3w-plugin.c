@@ -73,20 +73,26 @@ static gboolean
 on_workspace_scrolled(GtkWidget *ebox, GdkEventScroll *ev, gpointer data);
 
 static void
-on_workspace_created(i3workspace *workspace, gpointer data);
+on_workspace_created(gpointer data);
 static void
-on_workspace_destroyed(i3workspace *workspace, gpointer data);
+on_workspace_destroyed(gpointer data);
 static void
-on_workspace_changed(i3workspace *workspace, gpointer data);
+on_workspace_changed(gpointer data);
 
 static void
 on_mode_changed(gchar *mode, gpointer data);
+
+static void
+on_output_changed(gchar *mode, gpointer data);
 
 static void
 on_ipc_shutdown(gpointer i3_w);
 
 static void
 recover_from_disconnect(i3WorkspacesPlugin *i3_workspaces);
+
+static void
+handle_change_output(i3WorkspacesPlugin* i3_workspaces);
 
 /* register the plugin */
 XFCE_PANEL_PLUGIN_REGISTER(construct);
@@ -103,9 +109,9 @@ static void
 connect_callbacks(i3WorkspacesPlugin *i3_workspaces)
 {
     i3wm_set_on_workspace_created(i3_workspaces->i3wm,
-            on_workspace_created, i3_workspaces);
+            on_workspace_changed, i3_workspaces);
     i3wm_set_on_workspace_destroyed(i3_workspaces->i3wm,
-            on_workspace_destroyed, i3_workspaces);
+            on_workspace_changed, i3_workspaces);
     i3wm_set_on_workspace_blurred(i3_workspaces->i3wm,
             on_workspace_changed, i3_workspaces);
     i3wm_set_on_workspace_focused(i3_workspaces->i3wm,
@@ -114,9 +120,12 @@ connect_callbacks(i3WorkspacesPlugin *i3_workspaces)
             on_workspace_changed, i3_workspaces);
     i3wm_set_on_mode_changed(i3_workspaces->i3wm,
             on_mode_changed, i3_workspaces);
+    i3wm_set_on_output_changed(i3_workspaces->i3wm,
+            on_output_changed, i3_workspaces);
     i3wm_set_on_ipc_shutdown(i3_workspaces->i3wm,
             on_ipc_shutdown, i3_workspaces);
 }
+
 
 /**
  * construct_workspaces:
@@ -129,6 +138,7 @@ connect_callbacks(i3WorkspacesPlugin *i3_workspaces)
 static i3WorkspacesPlugin *
 construct_workspaces(XfcePanelPlugin *plugin)
 {
+
     i3WorkspacesPlugin *i3_workspaces;
     GtkOrientation orientation;
 
@@ -211,6 +221,9 @@ construct(XfcePanelPlugin *plugin)
 
     /* show the configure menu item */
     xfce_panel_plugin_menu_show_configure(plugin);
+
+    /* Auto-detect output configuration */
+    handle_change_output(i3_workspaces);
 }
 
 /**
@@ -292,6 +305,7 @@ orientation_changed(XfcePanelPlugin *plugin,
 static void
 configure_plugin(XfcePanelPlugin *plugin, i3WorkspacesPlugin *i3_workspaces)
 {
+
     i3_workspaces_config_show(i3_workspaces->config, plugin,
             config_changed, (gpointer)i3_workspaces);
 }
@@ -306,6 +320,8 @@ static void
 config_changed(gpointer cb_data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) cb_data;
+
+    handle_change_output(i3_workspaces);
     remove_workspaces(i3_workspaces);
     add_workspaces(i3_workspaces);
 }
@@ -366,39 +382,6 @@ remove_workspaces(i3WorkspacesPlugin *i3_workspaces)
 }
 
 /**
- * on_workspace_created:
- * @workspace: the workspace
- * @data: the workspaces plugin
- *
- * Workspace created event handler.
- */
-static void
-on_workspace_created(i3workspace *workspace, gpointer data)
-{
-    i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
-
-    remove_workspaces(i3_workspaces);
-    add_workspaces(i3_workspaces);
-}
-
-/**
- * on_workspace_destroyed:
- * @workspace: the workspace
- * @data: the workspaces plugin
- *
- * Workspace destroyed event handler.
- */
-static void
-on_workspace_destroyed(i3workspace *workspace, gpointer data)
-{
-    i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
-
-    GtkWidget *button = (GtkWidget *) g_hash_table_lookup(i3_workspaces->workspace_buttons, workspace);
-    g_hash_table_remove(i3_workspaces->workspace_buttons, workspace);
-    gtk_widget_destroy(button);
-}
-
-/**
  * on_workspace_changed:
  * @workspace: the workspace
  * @data: the workspaces plugin
@@ -406,12 +389,12 @@ on_workspace_destroyed(i3workspace *workspace, gpointer data)
  * Workspace changed event handler.
  */
 static void
-on_workspace_changed(i3workspace *workspace, gpointer data)
+on_workspace_changed(gpointer data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
 
-    GtkWidget *button = (GtkWidget *) g_hash_table_lookup(i3_workspaces->workspace_buttons, workspace);
-    set_button_label(button, workspace, i3_workspaces->config);
+    remove_workspaces(i3_workspaces);
+    add_workspaces(i3_workspaces);
 }
 
 /**
@@ -425,8 +408,9 @@ static void
 on_mode_changed(gchar *mode, gpointer data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
-	if (!strncmp(mode, "default", 7))
+	if (!strncmp(mode, "default", 7)) {
 		gtk_label_set_text((GtkLabel *) i3_workspaces->mode_label, "");
+    }
 	else {
 		// allocate space for the maximum possible size of the label
 		gulong maxlen = strlen(mode) + 37;
@@ -437,6 +421,51 @@ on_mode_changed(gchar *mode, gpointer data)
 
 		gtk_label_set_markup((GtkLabel *) i3_workspaces->mode_label, label_str);
 	}
+}
+
+/**
+ * handle_change_output:
+ * @i3_workspaces: the workspaces plugin
+ *
+ * Recomputes the panel's output based on XRandR's current data.
+ * Does not run if auto_detect_outputs is set to false.
+ */
+static void
+handle_change_output (i3WorkspacesPlugin* i3_workspaces)
+{
+
+    if(!i3_workspaces->config->auto_detect_outputs) return;
+
+    // Re-query X Server for monitor information, since it may have changed
+    i3_workspaces_outputs_t outputs = get_outputs();
+
+    // Get the plugin's widget window and its location in root window (i.e: screen) coordinates
+    int x, y;
+    GdkWindow* window = gtk_widget_get_window(i3_workspaces->ebox);
+    gdk_window_get_root_origin(window, &x, &y);
+
+    // Get the monitor name for the window location and set the config value
+    char* output_name = get_monitor_name_at(outputs, x, y);
+
+    i3_workspaces->config->output = output_name;
+    remove_workspaces(i3_workspaces);
+    add_workspaces(i3_workspaces);
+
+    free_outputs(outputs);
+}
+
+/**
+ * on_output_changed:
+ * @change: the change field, always "unspecified" for now
+ * @data: the workspaces plugin
+ *
+ * Output changed event handler.
+ */
+static void
+on_output_changed(gchar *mode, gpointer data)
+{
+    i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
+    handle_change_output(i3_workspaces);
 }
 
 
