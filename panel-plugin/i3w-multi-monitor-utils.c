@@ -72,7 +72,7 @@ get_outputs() {
             if (info) {
                 i3_workspaces_output_t* output = &outputs.outputs[num_connected_outputs];
 
-                output->name = malloc(strlen(output_info->name)*sizeof(char));
+                output->name = malloc((strlen(output_info->name)+1)*sizeof(char));
                 strcpy(output->name, output_info->name);
 
                 output->width = info->width;
@@ -112,7 +112,7 @@ free_outputs(i3_workspaces_outputs_t outputs) {
  *
  * Returns: A string, representing the monitor name.
  */
-char*
+const char*
 get_monitor_name_at(i3_workspaces_outputs_t outputs, int win_x, int win_y) {
     int o;
     for (o = 0; o < outputs.num_outputs; ++o) {
