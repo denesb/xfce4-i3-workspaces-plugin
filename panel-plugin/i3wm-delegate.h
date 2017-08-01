@@ -27,6 +27,7 @@ typedef struct _i3workspace
     gchar *name;
     gboolean focused;
     gboolean urgent;
+    gboolean visible;
     gchar *output;
 } i3workspace;
 

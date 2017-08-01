@@ -494,9 +494,15 @@ set_button_label(GtkWidget *button, i3workspace *workspace,
     gulong maxlen = strlen(name) + 51;
     gchar *label_str = (gchar *) calloc(maxlen, sizeof(gchar));
 
+    // Set label color based on workspace state
+    guint32 color;
+    if (workspace->urgent) color = config->urgent_color;
+    else if (workspace->focused) color = config->focused_color;
+    else if (workspace->visible) color = config->visible_color;
+    else color = config->normal_color;
+
     g_snprintf(label_str, maxlen, template,
-            workspace->urgent ? config->urgent_color :
-                (workspace->focused ? config->focused_color : config->normal_color),
+            color,
             workspace->focused ? focused_weight : blurred_weight,
             name);
 

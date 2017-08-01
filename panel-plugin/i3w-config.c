@@ -42,6 +42,8 @@ focused_color_changed(GtkWidget *button, i3WorkspacesConfig *config);
 void
 urgent_color_changed(GtkWidget *button, i3WorkspacesConfig *config);
 void
+visible_color_changed(GtkWidget *button, i3WorkspacesConfig *config);
+void
 mode_color_changed(GtkWidget *button, i3WorkspacesConfig *config);
 void
 strip_workspace_numbers_changed(GtkWidget *button, i3WorkspacesConfig *config);
@@ -118,6 +120,7 @@ i3_workspaces_config_load(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
     config->focused_color = xfce_rc_read_int_entry(rc, "focused_color", 0x000000);
     config->urgent_color = xfce_rc_read_int_entry(rc, "urgent_color", 0xff0000);
     config->mode_color = xfce_rc_read_int_entry(rc, "mode_color", 0xff0000);
+    config->mode_color = xfce_rc_read_int_entry(rc, "visible_color", 0x000000);
     config->strip_workspace_numbers = xfce_rc_read_bool_entry(rc,
             "strip_workspace_numbers", FALSE);
     config->auto_detect_outputs = xfce_rc_read_bool_entry(rc,
@@ -143,6 +146,7 @@ i3_workspaces_config_save(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
     xfce_rc_write_int_entry(rc, "focused_color", config->focused_color);
     xfce_rc_write_int_entry(rc, "urgent_color", config->urgent_color);
     xfce_rc_write_int_entry(rc, "mode_color", config->mode_color);
+    xfce_rc_write_int_entry(rc, "visible_color", config->visible_color);
     xfce_rc_write_bool_entry(rc, "strip_workspace_numbers",
             config->strip_workspace_numbers);
     xfce_rc_write_bool_entry(rc, "auto_detect_outputs",
@@ -189,10 +193,11 @@ i3_workspaces_config_show(i3WorkspacesConfig *config, XfcePanelPlugin *plugin,
 
     dialog_vbox = GTK_DIALOG(dialog)->vbox;
 
-	add_color_picker(config, dialog_vbox, "Normal Workspace Color:", config->normal_color, normal_color_changed);
-	add_color_picker(config, dialog_vbox, "Focused Workspace Color:", config->focused_color, focused_color_changed);
-	add_color_picker(config, dialog_vbox, "Urgent Workspace Color:", config->urgent_color, urgent_color_changed);
-	add_color_picker(config, dialog_vbox, "Binding Mode Color:", config->mode_color, mode_color_changed);
+    add_color_picker(config, dialog_vbox, "Normal Workspace Color:", config->normal_color, normal_color_changed);
+    add_color_picker(config, dialog_vbox, "Focused Workspace Color:", config->focused_color, focused_color_changed);
+    add_color_picker(config, dialog_vbox, "Urgent Workspace Color:", config->urgent_color, urgent_color_changed);
+    add_color_picker(config, dialog_vbox, "Unfocused Visible Workspace Color:", config->visible_color, visible_color_changed);
+    add_color_picker(config, dialog_vbox, "Binding Mode Color:", config->mode_color, mode_color_changed);
 
     /* strip workspace numbers */
     hbox = gtk_hbox_new(FALSE, 3);
@@ -279,6 +284,14 @@ urgent_color_changed(GtkWidget *button, i3WorkspacesConfig *config)
     GdkColor color;
     gtk_color_button_get_color(GTK_COLOR_BUTTON(button), &color);
     config->urgent_color = serialize_gdkcolor(&color);
+}
+
+void
+visible_color_changed(GtkWidget *button, i3WorkspacesConfig *config)
+{
+  GdkColor color;
+  gtk_color_button_get_color(GTK_COLOR_BUTTON(button), &color);
+  config->visible_color = serialize_gdkcolor(&color);
 }
 
 void
