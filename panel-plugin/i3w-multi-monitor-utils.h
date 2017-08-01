@@ -15,6 +15,7 @@
 #include <inttypes.h>
 #include <stdarg.h>
 #include <math.h>
+#include <glib.h>
 
 typedef struct {
     int x;

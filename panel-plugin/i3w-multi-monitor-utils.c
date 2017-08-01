@@ -31,7 +31,7 @@ find_crtc (Display* dpy, XRRScreenResources* res, RRCrtc xid) {
  *
  * Returns: True iff c indicated connected display
  */
-int
+gboolean
 is_connected (Connection c) {
     return c == RR_Connected;
 }
@@ -70,28 +70,19 @@ get_outputs() {
         if (connected) {
             XRRCrtcInfo* info = find_crtc(dpy, res, output_info->crtc);
             if (info) {
-                char* name = output_info->name;
-                int width = info->width;
-                int height = info->height;
-                int x = info->x;
-                int y = info->y;
-
-                char* name_dest = malloc(strlen(name)*sizeof(char));
-                strcpy(name_dest, name);
-
                 i3_workspaces_output_t* output = &outputs.outputs[num_connected_outputs];
 
-                output->name = name_dest;
-                output->width = width;
-                output->height = height;
-                output->x = x;
-                output->y = y;
+                output->name = malloc(strlen(output_info->name)*sizeof(char));
+                strcpy(output->name, output_info->name);
 
-                num_connected_outputs += 1;
+                output->width = info->width;
+                output->height = info->height;
+                output->x = info->x;
+                output->y = info->y;
+
+                num_connected_outputs++;
             }
         }
-
-        outputs.num_outputs = num_connected_outputs;
     }
 
     outputs.num_outputs = num_connected_outputs;
