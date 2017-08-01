@@ -91,6 +91,18 @@ get_outputs() {
 }
 
 /**
+ * free_outputs:
+ * @outputs: The outputs structure 
+ *
+ * Frees the allocated memory for an outputs structure
+ *
+ */
+void
+free_outputs(i3_workspaces_outputs_t outputs) {
+  free(outputs.outputs);
+}
+
+/**
  * get_monitor_name_at:
  * @outputs: The outputs information, as returned by get_outputs
  * @win_x: The X position of the coordinates to check

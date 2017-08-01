@@ -451,7 +451,7 @@ handle_change_output (i3WorkspacesPlugin* i3_workspaces)
     remove_workspaces(i3_workspaces);
     add_workspaces(i3_workspaces);
 
-    free(outputs.outputs);
+    free_outputs(outputs);
 }
 
 /**
