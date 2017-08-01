@@ -366,6 +366,7 @@ create_workspace(i3ipcWorkspaceReply * wreply)
     workspace->num = wreply->num;
     workspace->name = g_strdup(wreply->name);
     workspace->focused = wreply->focused;
+    workspace->visible = wreply->visible;
     workspace->urgent = wreply->urgent;
     workspace->output = g_strdup(wreply->output);
 

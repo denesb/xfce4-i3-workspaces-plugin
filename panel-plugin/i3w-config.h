@@ -25,6 +25,7 @@ typedef struct
 {
     guint32 normal_color;
     guint32 focused_color;
+    guint32 visible_color;
     guint32 urgent_color;
     guint32 mode_color;
     gboolean strip_workspace_numbers;
