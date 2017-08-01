@@ -253,7 +253,7 @@ strip_workspace_numbers_changed(GtkWidget *button, i3WorkspacesConfig *config)
 void
 auto_detect_outputs_changed(GtkWidget *button, i3WorkspacesConfig *config)
 {
-  config->auto_detect_outputs = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button));
+    config->auto_detect_outputs = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button));
 }
 
 void
@@ -289,9 +289,9 @@ urgent_color_changed(GtkWidget *button, i3WorkspacesConfig *config)
 void
 visible_color_changed(GtkWidget *button, i3WorkspacesConfig *config)
 {
-  GdkColor color;
-  gtk_color_button_get_color(GTK_COLOR_BUTTON(button), &color);
-  config->visible_color = serialize_gdkcolor(&color);
+    GdkColor color;
+    gtk_color_button_get_color(GTK_COLOR_BUTTON(button), &color);
+    config->visible_color = serialize_gdkcolor(&color);
 }
 
 void
