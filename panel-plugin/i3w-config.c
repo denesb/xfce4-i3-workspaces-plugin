@@ -120,7 +120,7 @@ i3_workspaces_config_load(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
     config->focused_color = xfce_rc_read_int_entry(rc, "focused_color", 0x000000);
     config->urgent_color = xfce_rc_read_int_entry(rc, "urgent_color", 0xff0000);
     config->mode_color = xfce_rc_read_int_entry(rc, "mode_color", 0xff0000);
-    config->mode_color = xfce_rc_read_int_entry(rc, "visible_color", 0x000000);
+    config->visible_color = xfce_rc_read_int_entry(rc, "visible_color", 0x000000);
     config->strip_workspace_numbers = xfce_rc_read_bool_entry(rc,
             "strip_workspace_numbers", FALSE);
     config->auto_detect_outputs = xfce_rc_read_bool_entry(rc,
