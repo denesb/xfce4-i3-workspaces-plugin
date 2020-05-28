@@ -1,6 +1,6 @@
 Summary: A workspaces plugin for xfce4 and the i3 window manager
 Name:    xfce4-i3-workspaces-plugin
-Version: 1.2.0
+Version: 1.3.1
 Release: 1%{?dist}
 Source0: %{name}-%{version}.tar.gz
 License: GPL v3
