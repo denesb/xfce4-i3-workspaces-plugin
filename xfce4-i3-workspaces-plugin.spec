@@ -14,7 +14,11 @@ BuildRequires: libxfce4util-devel
 BuildRequires: xfce4-panel-devel
 BuildRequires: i3ipc-glib
 
+%if 0%{?suse_version} >= 1500
+Requires: libglib-2_0-0
+%else
 Requires: glib2
+%endif
 Requires: libxfce4ui
 Requires: libxfce4util
 Requires: xfce4-panel
