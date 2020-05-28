@@ -23,6 +23,38 @@ Patches and pull requests are welcome!
 
 Feel free to contact me at: dns.botond at gmail dot com.
 
+Installing
+----------
+
+### Fedora/CentOS/openSUSE
+
+The package is available as RPM for Fedora 30+, openSUSE 15.1+ and CentOS 7. It's provided on a COPR
+repository maintained by [@fepitre](https://github.com/fepitre): https://copr.fedorainfracloud.org/coprs/fepitre/xfce4-i3/.
+
+#### Fedora and CentOS
+
+Please have a look on the [official documentation](https://docs.pagure.org/copr.copr/how_to_enable_repo.html#how-to-enable-repo) on how to enable COPR repository. Then, for Fedora,
+
+* dnf install xfce4-i3-workspaces-plugin
+
+and for CentOS,
+
+* yum install xfce4-i3-workspaces-plugin
+
+#### openSUSE
+
+Add the repo file by adjusting openSUSE release version. For example, for 15.1
+
+* zypper addrepo -f https://copr.fedorainfracloud.org/coprs/fepitre/xfce4-i3/repo/opensuse-leap-15.1/fepitre-xfce4-i3-opensuse-leap-15.1.repo fepitre-xfce4-i3
+
+and for Tumbleweed
+
+* zypper addrepo -f https://copr.fedorainfracloud.org/coprs/fepitre/xfce4-i3/repo/opensuse-tumbleweed/fepitre-xfce4-i3-opensuse-tumbleweed.repo fepitre-xfce4-i3
+
+Then, install the package
+
+* zypper install xfce4-i3-workspaces-plugin
+
 Building
 --------
 
