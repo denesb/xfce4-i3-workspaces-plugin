@@ -23,6 +23,48 @@ Patches and pull requests are welcome!
 
 Feel free to contact me at: dns.botond at gmail dot com.
 
+Installing
+----------
+
+### Fedora/CentOS/openSUSE
+
+The package is available as RPM for Fedora 30+, openSUSE 15.1+ and CentOS 7. It's provided on a COPR
+repository maintained by [@fepitre](https://github.com/fepitre): https://copr.fedorainfracloud.org/coprs/fepitre/xfce4-i3/.
+
+#### Fedora and CentOS
+
+Please have a look on the [official documentation](https://docs.pagure.org/copr.copr/how_to_enable_repo.html#how-to-enable-repo) on how to enable COPR repository. Then, for Fedora,
+
+```
+dnf install xfce4-i3-workspaces-plugin
+```
+
+and for CentOS,
+
+```
+yum install xfce4-i3-workspaces-plugin
+```
+
+#### openSUSE
+
+Add the repo file by adjusting openSUSE release version. For example, for 15.1
+
+```
+zypper addrepo -f https://copr.fedorainfracloud.org/coprs/fepitre/xfce4-i3/repo/opensuse-leap-15.1/fepitre-xfce4-i3-opensuse-leap-15.1.repo fepitre-xfce4-i3
+```
+
+and for Tumbleweed
+
+```
+zypper addrepo -f https://copr.fedorainfracloud.org/coprs/fepitre/xfce4-i3/repo/opensuse-tumbleweed/fepitre-xfce4-i3-opensuse-tumbleweed.repo fepitre-xfce4-i3
+```
+
+Then, install the package
+
+```
+zypper install xfce4-i3-workspaces-plugin
+```
+
 Building
 --------
 
@@ -44,24 +86,29 @@ Building
 + On binary distros you may have to install the -dev version of the required
 packages
 + For the compilation to work out of the box I had to install i3ipc-glib in
-the /usr prefix too.
+the `/usr` prefix too.
 
 ### Building from git (needs autotools)
-* git clone https://github.com/denesb/xfce4-i3-workspaces-plugin.git
-* cd xfce4-i3-workspaces-plugin
-* ./autogen.sh --prefix=/usr
-* make
-* sudo make install
+```
+git clone https://github.com/denesb/xfce4-i3-workspaces-plugin.git
+cd xfce4-i3-workspaces-plugin
+./autogen.sh --prefix=/usr
+make
+sudo make install
+```
 
 ### Building from release tarball
 * Download & extract tarball
-* cd xfce4-i3-workspaces-plugin
-* ./configure --prefix=/usr
-* make
-* sudo make install
+
+```
+cd xfce4-i3-workspaces-plugin
+./configure --prefix=/usr
+make
+sudo make install
+```
 
 *Note:*
-The --prefix=/usr is needed because if installed in /usr/local prefix the
+The `--prefix=/usr` is needed because if installed in `/usr/local` prefix the
 plugin is not discovered by xfce-panel. Maybe there is a way to tell xfce-panel
 to look in other places too, but I haven't found it just yet.
 
