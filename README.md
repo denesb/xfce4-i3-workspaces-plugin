@@ -65,6 +65,32 @@ Then, install the package
 zypper install xfce4-i3-workspaces-plugin
 ```
 
+####  Gentoo
+
+Add the repository
+
+```
+eselect repository add knotteye git https://pond.waldn.net/git/knotteye/overlay.git
+```
+
+Sync it
+
+```
+emaint sync -r knotteye
+```
+
+And install the package
+
+```
+emerge --ask xfce-extra/xfce4-i3-workspaces-plugin
+```
+
+If you get errors about package masking, add the following lines to `/etc/portage/package.accept_keywords`
+```
+>=x11-misc/i3ipc-glib-1.0.1 ~amd64
+>=xfce-extra/xfce4-i3-workspaces-plugin-1.3.2 ~amd64
+```
+
 Building
 --------
 
