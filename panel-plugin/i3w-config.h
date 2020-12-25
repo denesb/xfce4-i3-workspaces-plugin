@@ -38,9 +38,9 @@ typedef void (*ConfigChangedCallback) (gpointer cb_data);
 
 /* utility functions */
 guint32
-serialize_gdkcolor(GdkColor *gdkcolor);
-GdkColor *
-unserialize_gdkcolor(guint32 color);
+serialize_gdkrgba(GdkRGBA *gdkrgba);
+GdkRGBA *
+unserialize_gdkrgba(guint32 color);
 
 /* interface functions */
 i3WorkspacesConfig *
