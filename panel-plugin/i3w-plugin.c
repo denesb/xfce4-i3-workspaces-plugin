@@ -33,6 +33,9 @@
 static void
 connect_callbacks(i3WorkspacesPlugin *i3_workspaces);
 
+static void
+init_css(i3WorkspacesPlugin *i3_workspaces);
+
 static i3WorkspacesPlugin *
 construct_workspaces(XfcePanelPlugin *plugin);
 
@@ -126,6 +129,47 @@ connect_callbacks(i3WorkspacesPlugin *i3_workspaces)
             on_ipc_shutdown, i3_workspaces);
 }
 
+/**
+ * init_css:
+ * @i3_workspaces: the workspaces plugin
+ *
+ * Set the CSS for the application
+ */
+static void
+init_css(i3WorkspacesPlugin *i3_workspaces) {
+    i3WorkspacesConfig *config = i3_workspaces->config;
+    gchar *css = g_strdup_printf(
+        ".workspace {\n"
+        "  color: %s;\n"
+        "}\n"
+        ".workspace.visible {\n"
+        "  color: %s;\n"
+        "}\n"
+        ".workspace.focused {\n"
+        "  font-weight: bold;\n"
+        "  color: %s;\n"
+        "}\n"
+        ".workspace.urgent {\n"
+        "  color: %s;\n"
+        "}\n"
+        ".binding-mode {\n"
+        "  color: %s;\n"
+        "}\n",
+        gdk_rgba_to_string(&config->normal_color),
+        gdk_rgba_to_string(&config->visible_color),
+        gdk_rgba_to_string(&config->focused_color),
+        gdk_rgba_to_string(&config->urgent_color),
+        gdk_rgba_to_string(&config->mode_color));
+
+    GdkScreen *screen = gdk_screen_get_default();
+    GtkCssProvider *provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(provider, css, -1, NULL);
+    gtk_style_context_add_provider_for_screen(
+        screen, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+    g_free(css);
+}
+
 
 /**
  * construct_workspaces:
@@ -155,6 +199,9 @@ construct_workspaces(XfcePanelPlugin *plugin)
     /* get the current orientation */
     orientation = xfce_panel_plugin_get_orientation (plugin);
 
+    /* set up css */
+    init_css(i3_workspaces);
+
     /* create some panel widgets */
     i3_workspaces->ebox = gtk_event_box_new();
     gtk_widget_show(i3_workspaces->ebox);
@@ -172,6 +219,9 @@ construct_workspaces(XfcePanelPlugin *plugin)
 
 	/* Add a label for the binding mode */
 	i3_workspaces->mode_label = gtk_label_new(NULL);
+    GtkStyleContext *mode_label_context = gtk_widget_get_style_context(
+        GTK_WIDGET(i3_workspaces->mode_label));
+    gtk_style_context_add_class(mode_label_context, "binding-mode");
 	gtk_box_pack_end(GTK_BOX(i3_workspaces->hvbox), i3_workspaces->mode_label, FALSE, FALSE, 0);
 	gtk_widget_show(i3_workspaces->mode_label);
 
@@ -321,6 +371,7 @@ config_changed(gpointer cb_data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) cb_data;
 
+    init_css(i3_workspaces);
     handle_change_output(i3_workspaces);
     remove_workspaces(i3_workspaces);
     add_workspaces(i3_workspaces);
@@ -347,6 +398,9 @@ add_workspaces(i3WorkspacesPlugin *i3_workspaces)
         {
             GtkWidget * button;
             button = xfce_panel_create_button();
+            GtkStyleContext *context = gtk_widget_get_style_context(button);
+            gtk_style_context_add_class(context, "workspace");
+
             gtk_button_set_label(GTK_BUTTON(button), workspace->name);
 
             set_button_label(button, workspace, i3_workspaces->config);
@@ -412,14 +466,7 @@ on_mode_changed(gchar *mode, gpointer data)
 		gtk_label_set_text((GtkLabel *) i3_workspaces->mode_label, "");
     }
 	else {
-		// allocate space for the maximum possible size of the label
-		gulong maxlen = strlen(mode) + 37;
-		gchar *label_str = (gchar *) calloc(maxlen, sizeof(gchar));
-
-		static gchar *template = "<span foreground=\"#%06X\">%s</span>";
-		g_snprintf(label_str, maxlen, template, gdk_rgba_to_int(&i3_workspaces->config->mode_color), mode);
-
-		gtk_label_set_markup((GtkLabel *) i3_workspaces->mode_label, label_str);
+		gtk_label_set_text((GtkLabel *) i3_workspaces->mode_label, mode);
 	}
 }
 
@@ -482,33 +529,22 @@ static void
 set_button_label(GtkWidget *button, i3workspace *workspace,
         i3WorkspacesConfig *config)
 {
-    static gchar *template = "<span foreground=\"#%06X\" weight=\"%s\">%s</span>";
-    static gchar *focused_weight = "bold";
-    static gchar *blurred_weight = "normal";
+    GtkStyleContext *context = gtk_widget_get_style_context(button);
+
+    // Set button class based on workspace state
+    if (workspace->urgent) gtk_style_context_add_class(context, "urgent");
+    else gtk_style_context_remove_class(context, "urgent");
+    if (workspace->focused) gtk_style_context_add_class(context, "focused");
+    else gtk_style_context_remove_class(context, "focused");
+    if (workspace->visible) gtk_style_context_add_class(context, "visible");
+    else gtk_style_context_remove_class(context, "visible");
 
     gchar *name = config->strip_workspace_numbers ?
         strip_workspace_numbers(workspace->name, workspace->num) :
         workspace->name;
 
-    // allocate space for the maximum possible size of the label
-    gulong maxlen = strlen(name) + 51;
-    gchar *label_str = (gchar *) calloc(maxlen, sizeof(gchar));
-
-    // Set label color based on workspace state
-    GdkRGBA color = workspace->urgent ? config->urgent_color :
-        workspace->focused ? config->focused_color :
-        workspace->visible ? config->visible_color :
-        config->normal_color;
-
-    g_snprintf(label_str, maxlen, template,
-            gdk_rgba_to_int(&color),
-            workspace->focused ? focused_weight : blurred_weight,
-            name);
-
     GtkWidget *label = gtk_bin_get_child(GTK_BIN(button));
-    gtk_label_set_markup(GTK_LABEL(label), label_str);
-
-    free(label_str);
+    gtk_label_set_text(GTK_LABEL(label), name);
 }
 
 /**

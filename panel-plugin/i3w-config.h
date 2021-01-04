@@ -36,10 +36,6 @@ i3WorkspacesConfig;
 
 typedef void (*ConfigChangedCallback) (gpointer cb_data);
 
-/* utility functions */
-guint32
-gdk_rgba_to_int(GdkRGBA *gdkrgba);
-
 /* interface functions */
 i3WorkspacesConfig *
 i3_workspaces_config_new();

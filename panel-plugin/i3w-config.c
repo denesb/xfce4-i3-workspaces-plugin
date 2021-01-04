@@ -57,18 +57,6 @@ config_dialog_closed(GtkWidget *dialog, int response, ConfigDialogClosedParam *p
 
 /* Function Implementations */
 
-guint32
-gdk_rgba_to_int(GdkRGBA *gdkrgba)
-{
-    // convert the GdkRGBA components to 8 bit ints
-    guint8 red = gdkrgba->red * 255;
-    guint8 green = gdkrgba->green * 255;
-    guint8 blue = gdkrgba->blue * 255;
-
-    return (red << 16) + (green << 8) + blue;
-}
-
-
 i3WorkspacesConfig *
 i3_workspaces_config_new()
 {
