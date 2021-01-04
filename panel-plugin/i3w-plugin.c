@@ -417,7 +417,7 @@ on_mode_changed(gchar *mode, gpointer data)
 		gchar *label_str = (gchar *) calloc(maxlen, sizeof(gchar));
 
 		static gchar *template = "<span foreground=\"#%06X\">%s</span>";
-		g_snprintf(label_str, maxlen, template, i3_workspaces->config->mode_color, mode);
+		g_snprintf(label_str, maxlen, template, gdk_rgba_to_int(&i3_workspaces->config->mode_color), mode);
 
 		gtk_label_set_markup((GtkLabel *) i3_workspaces->mode_label, label_str);
 	}
@@ -495,14 +495,13 @@ set_button_label(GtkWidget *button, i3workspace *workspace,
     gchar *label_str = (gchar *) calloc(maxlen, sizeof(gchar));
 
     // Set label color based on workspace state
-    guint32 color;
-    if (workspace->urgent) color = config->urgent_color;
-    else if (workspace->focused) color = config->focused_color;
-    else if (workspace->visible) color = config->visible_color;
-    else color = config->normal_color;
+    GdkRGBA color = workspace->urgent ? config->urgent_color :
+        workspace->focused ? config->focused_color :
+        workspace->visible ? config->visible_color :
+        config->normal_color;
 
     g_snprintf(label_str, maxlen, template,
-            color,
+            gdk_rgba_to_int(&color),
             workspace->focused ? focused_weight : blurred_weight,
             name);
 
