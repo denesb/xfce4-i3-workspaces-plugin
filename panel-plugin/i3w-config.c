@@ -110,7 +110,7 @@ i3_workspaces_config_free(i3WorkspacesConfig *config)
 gboolean
 i3_workspaces_config_load(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
 {
-    gchar *file = xfce_panel_plugin_save_location(plugin, FALSE);
+    gchar *file = xfce_panel_plugin_lookup_rc_file(plugin);
     if (G_UNLIKELY(!file))
         return FALSE;
 
