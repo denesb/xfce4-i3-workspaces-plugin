@@ -6,3 +6,4 @@ _Comment=Workspaces plugin for managing i3 window manager workspaces
 X-XFCE-Module=i3workspaces
 X-XFCE-Internal=false
 X-XFCE-Unique=false
+X-XFCE-API=2.0

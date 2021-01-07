@@ -23,7 +23,7 @@
 #include <string.h>
 #endif
 
-#include <libxfce4panel/xfce-hvbox.h>
+#include <libxfce4panel/libxfce4panel.h>
 #include <glib/gprintf.h>
 
 #include "i3w-plugin.h"
@@ -143,7 +143,7 @@ construct_workspaces(XfcePanelPlugin *plugin)
     GtkOrientation orientation;
 
     /* allocate memory for the plugin structure */
-    i3_workspaces = panel_slice_new0(i3WorkspacesPlugin);
+    i3_workspaces = g_slice_new0(i3WorkspacesPlugin);
 
     /* pointer to plugin */
     i3_workspaces->plugin = plugin;
@@ -164,7 +164,7 @@ construct_workspaces(XfcePanelPlugin *plugin)
     g_signal_connect(G_OBJECT(i3_workspaces->ebox), "scroll-event",
             G_CALLBACK(on_workspace_scrolled), i3_workspaces);
 
-    i3_workspaces->hvbox = xfce_hvbox_new(orientation, FALSE, 2);
+    i3_workspaces->hvbox = gtk_box_new(orientation, 2);
     gtk_widget_show(i3_workspaces->hvbox);
     gtk_container_add(GTK_CONTAINER(i3_workspaces->ebox), i3_workspaces->hvbox);
 
@@ -247,7 +247,7 @@ destruct(XfcePanelPlugin *plugin, i3WorkspacesPlugin *i3_workspaces)
     i3wm_destruct(i3_workspaces->i3wm);
 
     /* free the plugin structure */
-    panel_slice_free(i3WorkspacesPlugin, i3_workspaces);
+    g_slice_free(i3WorkspacesPlugin, i3_workspaces);
 }
 
 /**
@@ -291,7 +291,7 @@ orientation_changed(XfcePanelPlugin *plugin,
         GtkOrientation orientation, i3WorkspacesPlugin *i3_workspaces)
 {
     /* change the orienation of the box */
-    xfce_hvbox_set_orientation(XFCE_HVBOX(i3_workspaces->hvbox), orientation);
+    gtk_orientable_set_orientation(GTK_ORIENTABLE(i3_workspaces->hvbox), orientation);
 }
 
 
