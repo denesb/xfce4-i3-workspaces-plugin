@@ -30,6 +30,8 @@ typedef struct
 {
     XfcePanelPlugin *plugin;
 
+    GtkCssProvider *css_provider;
+
     /* panel widgets */
     GtkWidget       *ebox;
     GtkWidget       *hvbox;
