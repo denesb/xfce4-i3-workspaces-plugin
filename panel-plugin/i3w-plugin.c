@@ -34,7 +34,7 @@ static void
 connect_callbacks(i3WorkspacesPlugin *i3_workspaces);
 
 static void
-load_css_from_config(i3WorkspacesPlugin *i3_workspaces);
+init_css(i3WorkspacesPlugin *i3_workspaces);
 
 static i3WorkspacesPlugin *
 construct_workspaces(XfcePanelPlugin *plugin);
@@ -130,15 +130,46 @@ connect_callbacks(i3WorkspacesPlugin *i3_workspaces)
 }
 
 /**
- * load_css_from_config:
+ * init_css:
  * @i3_workspaces: the workspaces plugin
  *
  * Set the CSS for the application
  */
 static void
-load_css_from_config(i3WorkspacesPlugin *i3_workspaces) {
-    gtk_css_provider_load_from_data(
-        i3_workspaces->css_provider, i3_workspaces->config->css, -1, NULL);
+init_css(i3WorkspacesPlugin *i3_workspaces) {
+    i3WorkspacesConfig *config = i3_workspaces->config;
+
+    if (config->use_css) {
+        gtk_css_provider_load_from_data(
+            i3_workspaces->css_provider, i3_workspaces->config->css, -1, NULL);
+    }
+    else {
+        gchar *css = g_strdup_printf(
+            ".workspace {\n"
+            "  color: %s;\n"
+            "}\n"
+            ".workspace.visible {\n"
+            "  color: %s;\n"
+            "}\n"
+            ".workspace.focused {\n"
+            "  font-weight: bold;\n"
+            "  color: %s;\n"
+            "}\n"
+            ".workspace.urgent {\n"
+            "  color: %s;\n"
+            "}\n"
+            ".binding-mode {\n"
+            "  color: %s;\n"
+            "}\n",
+            gdk_rgba_to_string(&config->normal_color),
+            gdk_rgba_to_string(&config->visible_color),
+            gdk_rgba_to_string(&config->focused_color),
+            gdk_rgba_to_string(&config->urgent_color),
+            gdk_rgba_to_string(&config->mode_color));
+
+        gtk_css_provider_load_from_data(i3_workspaces->css_provider, css, -1, NULL);
+        g_free(css);
+    }
 }
 
 
@@ -178,7 +209,7 @@ construct_workspaces(XfcePanelPlugin *plugin)
         screen,
         GTK_STYLE_PROVIDER(i3_workspaces->css_provider),
         GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    load_css_from_config(i3_workspaces);
+    init_css(i3_workspaces);
 
     /* create some panel widgets */
     i3_workspaces->ebox = gtk_event_box_new();
@@ -349,7 +380,7 @@ config_changed(gpointer cb_data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) cb_data;
 
-    load_css_from_config(i3_workspaces);
+    init_css(i3_workspaces);
     handle_change_output(i3_workspaces);
     remove_workspaces(i3_workspaces);
     add_workspaces(i3_workspaces);

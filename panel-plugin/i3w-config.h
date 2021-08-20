@@ -23,6 +23,12 @@
 
 typedef struct
 {
+    gboolean use_css;
+    GdkRGBA normal_color;
+    GdkRGBA focused_color;
+    GdkRGBA visible_color;
+    GdkRGBA urgent_color;
+    GdkRGBA mode_color;
     gchar *css;
     gboolean strip_workspace_numbers;
     gboolean auto_detect_outputs;

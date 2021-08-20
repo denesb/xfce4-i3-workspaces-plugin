@@ -36,6 +36,10 @@ typedef struct {
 } ConfigDialogClosedParam;
 
 void
+use_css_changed(GtkStack *stack, GParamSpec *pspec, i3WorkspacesConfig *config);
+void
+color_changed(GtkWidget *button, GdkRGBA *color_setting);
+void
 css_changed(GtkTextBuffer *buffer, i3WorkspacesConfig *config);
 void
 strip_workspace_numbers_changed(GtkWidget *button, i3WorkspacesConfig *config);
@@ -73,6 +77,17 @@ i3_workspaces_config_load(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
     XfceRc *rc = xfce_rc_simple_open(file, FALSE);
     g_free(file);
 
+    gdk_rgba_parse(&config->normal_color,
+                   xfce_rc_read_entry(rc, "normal_color", "#000000"));
+    gdk_rgba_parse(&config->focused_color,
+                   xfce_rc_read_entry(rc, "focused_color", "#000000"));
+    gdk_rgba_parse(&config->urgent_color,
+                   xfce_rc_read_entry(rc, "urgent_color", "#ff0000"));
+    gdk_rgba_parse(&config->mode_color,
+                   xfce_rc_read_entry(rc, "mode_color", "#ff0000"));
+    gdk_rgba_parse(&config->visible_color,
+                   xfce_rc_read_entry(rc, "visible_color", "#000000"));
+
     const gchar default_css[] =
         ".workspace { }\n"
         ".workspace.visible { }\n"
@@ -81,6 +96,8 @@ i3_workspaces_config_load(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
         ".binding-mode { }\n";
 
     config->css = g_strdup(xfce_rc_read_entry(rc, "css", default_css));
+    config->use_css = xfce_rc_read_bool_entry(rc, "use_css", FALSE);
+
     config->strip_workspace_numbers = xfce_rc_read_bool_entry(rc,
             "strip_workspace_numbers", FALSE);
     config->auto_detect_outputs = xfce_rc_read_bool_entry(rc,
@@ -102,6 +119,12 @@ i3_workspaces_config_save(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
     XfceRc *rc = xfce_rc_simple_open(file, FALSE);
     g_free(file);
 
+    xfce_rc_write_bool_entry(rc, "use_css", config->use_css);
+    xfce_rc_write_entry(rc, "normal_color", gdk_rgba_to_string(&config->normal_color));
+    xfce_rc_write_entry(rc, "focused_color", gdk_rgba_to_string(&config->focused_color));
+    xfce_rc_write_entry(rc, "urgent_color", gdk_rgba_to_string(&config->urgent_color));
+    xfce_rc_write_entry(rc, "mode_color", gdk_rgba_to_string(&config->mode_color));
+    xfce_rc_write_entry(rc, "visible_color", gdk_rgba_to_string(&config->visible_color));
     xfce_rc_write_entry(rc, "css", config->css);
     xfce_rc_write_bool_entry(rc, "strip_workspace_numbers",
             config->strip_workspace_numbers);
@@ -115,10 +138,28 @@ i3_workspaces_config_save(i3WorkspacesConfig *config, XfcePanelPlugin *plugin)
 }
 
 void
+add_color_picker(i3WorkspacesConfig *config, GtkWidget *vbox, char *text, GdkRGBA *color_setting) {
+    GtkWidget *hbox, *button, *label;
+
+    /* focused color */
+    hbox = gtk_box_new(FALSE, 3);
+    gtk_container_add(GTK_CONTAINER(vbox), hbox);
+    gtk_container_set_border_width(GTK_CONTAINER(hbox), 3);
+
+    label = gtk_label_new(_(text));
+    gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0);
+
+    button = gtk_color_button_new_with_rgba(color_setting);
+    gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
+
+    g_signal_connect(G_OBJECT(button), "color-set", G_CALLBACK(color_changed), color_setting);
+}
+
+void
 i3_workspaces_config_show(i3WorkspacesConfig *config, XfcePanelPlugin *plugin,
         ConfigChangedCallback cb, gpointer cb_data)
 {
-    GtkWidget *dialog, *dialog_content, *hbox, *view, *button, *label;
+    GtkWidget *dialog, *dialog_content, *hbox, *vbox, *view, *button, *label, *stack, *stack_switcher;
     GtkTextBuffer *buffer;
 
     xfce_panel_plugin_block_menu(plugin);
@@ -137,16 +178,38 @@ i3_workspaces_config_show(i3WorkspacesConfig *config, XfcePanelPlugin *plugin,
 
     dialog_content = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
 
+    /* color buttons or CSS */
+    stack = gtk_stack_new();
+
+    /* color buttons */
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
+    add_color_picker(config, vbox, "Normal Workspace Color:", &config->normal_color);
+    add_color_picker(config, vbox, "Focused Workspace Color:", &config->focused_color);
+    add_color_picker(config, vbox, "Urgent Workspace Color:", &config->urgent_color);
+    add_color_picker(config, vbox, "Unfocused Visible Workspace Color:", &config->visible_color);
+    add_color_picker(config, vbox, "Binding Mode Color:", &config->mode_color);
+    gtk_stack_add_titled(GTK_STACK(stack), vbox, "buttons", "Color Pickers");
+    gtk_widget_set_visible(vbox, TRUE);
+
     /* CSS */
-    hbox = gtk_box_new(FALSE, 3);
-    gtk_container_add(GTK_CONTAINER(dialog_content), hbox);
+    hbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
     gtk_container_set_border_width(GTK_CONTAINER(hbox), 3);
 
     view = gtk_text_view_new();
     buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW (view));
     gtk_text_buffer_set_text(buffer, config->css, -1);
     gtk_box_pack_start(GTK_BOX(hbox), view, FALSE, FALSE, 0);
+    gtk_stack_add_titled(GTK_STACK(stack), hbox, "css", "Raw CSS");
     g_signal_connect(G_OBJECT(buffer), "changed", G_CALLBACK(css_changed), config);
+
+    stack_switcher = gtk_stack_switcher_new();
+    gtk_stack_switcher_set_stack(GTK_STACK_SWITCHER(stack_switcher), GTK_STACK(stack));
+    gtk_box_pack_start(GTK_BOX(dialog_content), stack_switcher, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(dialog_content), stack, FALSE, FALSE, 0);
+    gtk_widget_set_visible(hbox, TRUE);
+    gtk_stack_set_visible_child_name(GTK_STACK(stack), config->use_css ? "css" : "buttons");
+    g_signal_connect(G_OBJECT(stack), "notify::visible-child", G_CALLBACK(use_css_changed), config);
+
 
     /* strip workspace numbers */
     hbox = gtk_box_new(FALSE, 3);
@@ -194,6 +257,12 @@ i3_workspaces_config_show(i3WorkspacesConfig *config, XfcePanelPlugin *plugin,
 }
 
 void
+use_css_changed(GtkStack *stack, GParamSpec *pspec, i3WorkspacesConfig *config) {
+    const gchar *visible_child = gtk_stack_get_visible_child_name(stack);
+    config->use_css = !g_strcmp0(visible_child, "css");
+}
+
+void
 css_changed(GtkTextBuffer *buffer, i3WorkspacesConfig *config)
 {
     GtkTextIter start, end;
@@ -217,6 +286,12 @@ void
 output_changed(GtkWidget *entry, i3WorkspacesConfig *config)
 {
     config->output = g_strdup(gtk_entry_get_text(GTK_ENTRY(entry)));
+}
+
+void
+color_changed(GtkWidget *button, GdkRGBA *color_setting)
+{
+    gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(button), color_setting);
 }
 
 void
