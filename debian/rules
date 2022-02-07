@@ -24,5 +24,6 @@ export PREFIX=/usr
 # debmake generated override targets
 # This is example for Cmake (See http://bugs.debian.org/641051 )
 
+DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 override_dh_auto_configure:
-	./autogen.sh --prefix=/usr
+	./autogen.sh --prefix=/usr --libdir=/usr/lib/$(DEB_HOST_MULTIARCH)
