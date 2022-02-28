@@ -23,11 +23,13 @@
 
 typedef struct
 {
-    guint32 normal_color;
-    guint32 focused_color;
-    guint32 visible_color;
-    guint32 urgent_color;
-    guint32 mode_color;
+    gboolean use_css;
+    GdkRGBA normal_color;
+    GdkRGBA focused_color;
+    GdkRGBA visible_color;
+    GdkRGBA urgent_color;
+    GdkRGBA mode_color;
+    gchar *css;
     gboolean strip_workspace_numbers;
     gboolean auto_detect_outputs;
     gchar *output;
@@ -35,12 +37,6 @@ typedef struct
 i3WorkspacesConfig;
 
 typedef void (*ConfigChangedCallback) (gpointer cb_data);
-
-/* utility functions */
-guint32
-serialize_gdkrgba(GdkRGBA *gdkrgba);
-GdkRGBA *
-unserialize_gdkrgba(guint32 color);
 
 /* interface functions */
 i3WorkspacesConfig *
