@@ -5,6 +5,11 @@ A workspace switcher plugin for xfce4-panel which can be used for the i3 window 
 
 For available releases see the [releases](https://github.com/denesb/xfce4-i3-workspaces-plugin/releases) page.
 
+Maintenance mode
+----------------
+
+This project is in maintenance mode. I myself don't use it for years now and don't actively develop it. I still merge pull requests from contributors but I rely on them to test their changes as I don't keep a setup around for testing purposes.
+
 Features
 --------
 
