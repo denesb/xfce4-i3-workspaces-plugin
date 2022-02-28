@@ -1,3 +1,10 @@
+xfce4-i3-workspaces-plugin (1.4.0-1) unstable; urgency=low
+
+  * Support multiarch
+  * Updated dependencies
+
+ -- Gergely Risko <risko@debian.org>  Mon, 07 Feb 2022 17:01:14 +0100
+
 xfce4-i3-workspaces-plugin (1.2.0-3) unstable; urgency=low
 
   * Solved problem of POT file referencing unknown file

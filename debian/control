@@ -2,8 +2,8 @@ Source: xfce4-i3-workspaces-plugin
 section: utils
 Priority: optional
 Maintainer: Alexandre Acebedo <alexandre.acebedo@gmail.com>
-Build-Depends: debhelper (>= 9), xfce4-panel-dev, libjson-glib-dev, libxcb1-dev, gobject-introspection, gtk-doc-tools, libxfce4util-dev, libglib2.0-dev, xfce4-dev-tools, libx11-dev, libxfce4ui-1-dev, libgtk2.0-dev, libi3ipc-glib
-Standards-Version: 3.9.5
+Build-Depends: debhelper (>= 13), libxfce4panel-2.0-dev, libjson-glib-dev, libxcb1-dev, gobject-introspection, gtk-doc-tools, libxfce4util-dev, libglib2.0-dev, xfce4-dev-tools, libx11-dev, libxfce4ui-2-dev, libgtk-3-dev, libi3ipc-glib
+Standards-Version: 4.6.0.1
 Homepage: http://www.github.com/aacebedo/xfce4-i3-workspaces-plugin
 
 Package: xfce4-i3-workspaces-plugin
