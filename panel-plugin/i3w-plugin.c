@@ -92,7 +92,7 @@ static void
 on_ipc_shutdown(gpointer i3_w);
 
 static void
-recover_from_disconnect(i3WorkspacesPlugin *i3_workspaces);
+reconnect_i3wm_timer(i3WorkspacesPlugin *i3_workspaces);
 
 static void
 handle_change_output(i3WorkspacesPlugin* i3_workspaces);
@@ -226,24 +226,16 @@ construct_workspaces(XfcePanelPlugin *plugin)
 
     i3_workspaces->workspace_buttons = g_hash_table_new(g_direct_hash, g_direct_equal);
 
-	/* Add a label for the binding mode */
-	i3_workspaces->mode_label = gtk_label_new(NULL);
+    /* Add a label for the binding mode */
+    i3_workspaces->mode_label = gtk_label_new(NULL);
     GtkStyleContext *mode_label_context = gtk_widget_get_style_context(
         GTK_WIDGET(i3_workspaces->mode_label));
     gtk_style_context_add_class(mode_label_context, "binding-mode");
-	gtk_box_pack_end(GTK_BOX(i3_workspaces->hvbox), i3_workspaces->mode_label, FALSE, FALSE, 0);
-	gtk_widget_show(i3_workspaces->mode_label);
+    gtk_box_pack_end(GTK_BOX(i3_workspaces->hvbox), i3_workspaces->mode_label, FALSE, FALSE, 0);
+    gtk_widget_show(i3_workspaces->mode_label);
 
-    GError *err = NULL;
-    i3_workspaces->i3wm = i3wm_construct(&err);
-    if (NULL != err)
-    {
-        recover_from_disconnect(i3_workspaces);
-    }
-
-    connect_callbacks(i3_workspaces);
-
-    add_workspaces(i3_workspaces);
+    /* Setup a timer to connect to the i3wm until success. */
+    reconnect_i3wm_timer(i3_workspaces);
 
     return i3_workspaces;
 }
@@ -302,8 +294,17 @@ destruct(XfcePanelPlugin *plugin, i3WorkspacesPlugin *i3_workspaces)
     /* destroy the panel widgets */
     gtk_widget_destroy(i3_workspaces->hvbox);
 
+    /* cancel the timer */
+    if (i3_workspaces->timeout) {
+        g_source_remove(i3_workspaces->timeout);
+        i3_workspaces->timeout = 0;
+    }
+
     /* destroy the i3wm delegate */
-    i3wm_destruct(i3_workspaces->i3wm);
+    if (i3_workspaces->i3wm) {
+        i3wm_destruct(i3_workspaces->i3wm);
+        i3_workspaces->i3wm = NULL;
+    }
 
     /* free the plugin structure */
     g_slice_free(i3WorkspacesPlugin, i3_workspaces);
@@ -395,6 +396,7 @@ config_changed(gpointer cb_data)
 static void
 add_workspaces(i3WorkspacesPlugin *i3_workspaces)
 {
+    g_assert(i3_workspaces->i3wm);
     GSList *wlist = i3wm_get_workspaces(i3_workspaces->i3wm);
 
     GSList *witem;
@@ -599,10 +601,14 @@ static void
 on_workspace_clicked(GtkWidget *button, gpointer data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *)data;
-    GSList *wlist = i3wm_get_workspaces(i3_workspaces->i3wm);
+    GSList *wlist, *witem;
     i3workspace *workspace = NULL;
 
-    GSList *witem;
+    if (!i3_workspaces->i3wm) {
+        return;
+    }
+
+    wlist = i3wm_get_workspaces(i3_workspaces->i3wm);
     for (witem = wlist; witem != NULL; witem = witem->next)
     {
         workspace = (i3workspace *) witem->data;
@@ -634,6 +640,12 @@ static gboolean
 on_workspace_scrolled(GtkWidget *ebox, GdkEventScroll *ev, gpointer data)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *)data;
+
+    if (!i3_workspaces->i3wm) {
+        /* Hasn't connected, so stop the event. Once connected the workspace
+         * is ensured to be updated. */
+        return TRUE;
+    }
 
     GList *wlist = g_hash_table_get_keys(i3_workspaces->workspace_buttons);
     wlist = g_list_sort(wlist, (GCompareFunc) i3wm_workspace_cmp);
@@ -677,28 +689,52 @@ on_ipc_shutdown(gpointer i3_w)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) i3_w;
 
+    /* Remove previous resources */
     remove_workspaces(i3_workspaces);
-    i3wm_destruct(i3_workspaces->i3wm);
-    i3_workspaces->i3wm = NULL;
+    if (i3_workspaces->i3wm) {
+        i3wm_destruct(i3_workspaces->i3wm);
+        i3_workspaces->i3wm = NULL;
+    }
 
-    recover_from_disconnect(i3_workspaces);
+    /* When shutdown, wake up the timer try to reconnect */
+    reconnect_i3wm_timer(i3_workspaces);
+}
 
+static gboolean
+reconnect_i3wm_callback(gpointer data)
+{
+    i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) data;
+    GError *err = NULL;
+
+    if (i3_workspaces->i3wm) {
+        // maybe already initialized by other timers (e.g. shutdown + construct)
+        return G_SOURCE_REMOVE;
+    }
+
+    fprintf(stderr, "Connecting to i3 workspace manager...\n");
+    i3_workspaces->i3wm = i3wm_construct(&err);
+    if (err != NULL) {
+        fprintf(stderr, "Still waiting for i3 window manager: %s\n",
+                err->message);
+        g_error_free(err);
+        return G_SOURCE_CONTINUE;
+    }
+
+    // connected, doing the init things; todo: is memory barrier needed?
+    //   don't know whether the timer is sync or not
     connect_callbacks(i3_workspaces);
-
     add_workspaces(i3_workspaces);
+
+    i3_workspaces->timeout = 0;
+    return G_SOURCE_REMOVE;
 }
 
 static void
-recover_from_disconnect(i3WorkspacesPlugin *i3_workspaces)
+reconnect_i3wm_timer(i3WorkspacesPlugin *i3_workspaces)
 {
-    GError *err = NULL;
-
-    i3_workspaces->i3wm = i3wm_construct(&err);
-    while (NULL != err)
-    {
-        fprintf(stderr, "Cannot connect to the i3 window manager: %s\n", err->message);
-        g_error_free(err);
-        err = NULL;
-        i3_workspaces->i3wm = i3wm_construct(&err);
+    guint id = g_timeout_add_seconds(1, reconnect_i3wm_callback, i3_workspaces);
+    if (id == 0) {
+        fprintf(stderr, "Timer broken! Plugin will no longer works.\n");
     }
+    i3_workspaces->timeout = id;
 }
