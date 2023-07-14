@@ -45,6 +45,7 @@ typedef struct
     i3WorkspacesConfig *config;
 
     i3windowManager *i3wm;
+    guint timeout;
 }
 i3WorkspacesPlugin;
 
