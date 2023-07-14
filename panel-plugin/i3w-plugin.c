@@ -187,6 +187,8 @@ construct_workspaces(XfcePanelPlugin *plugin)
 
     i3WorkspacesPlugin *i3_workspaces;
     GtkOrientation orientation;
+    fprintf(stderr, "xfce4_i3_workspaces: construct_workspace, plugin=%p\n",
+            plugin);
 
     /* allocate memory for the plugin structure */
     i3_workspaces = g_slice_new0(i3WorkspacesPlugin);
@@ -688,6 +690,7 @@ static void
 on_ipc_shutdown(gpointer i3_w)
 {
     i3WorkspacesPlugin *i3_workspaces = (i3WorkspacesPlugin *) i3_w;
+    fprintf(stderr, "xfce4_i3_workspaces: on_ipc_shutdown, i3_w=%p\n", i3_w);
 
     /* Remove previous resources */
     remove_workspaces(i3_workspaces);
@@ -707,7 +710,8 @@ reconnect_i3wm_callback(gpointer data)
     GError *err = NULL;
 
     if (i3_workspaces->i3wm) {
-        // maybe already initialized by other timers (e.g. shutdown + construct)
+        // maybe already initialized by other timers?
+        fprintf(stderr, "warn: other timer already reconnected?\n");
         return G_SOURCE_REMOVE;
     }
 
