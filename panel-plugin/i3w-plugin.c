@@ -552,7 +552,7 @@ set_button_label(GtkWidget *button, i3workspace *workspace,
     if (workspace->visible) gtk_style_context_add_class(context, "visible");
     else gtk_style_context_remove_class(context, "visible");
 
-    gchar *name = config->strip_workspace_numbers ?
+    gchar *name = (config->strip_workspace_numbers && workspace->num > 0) ?
         strip_workspace_numbers(workspace->name, workspace->num) :
         workspace->name;
 
