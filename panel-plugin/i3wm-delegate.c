@@ -326,7 +326,7 @@ i3wm_goto_workspace(i3windowManager *i3wm, i3workspace *workspace, GError **err)
     size_t cmd_size = (13 + strlen(workspace->name)) * sizeof(gchar);
     gchar *command_str = (gchar *) malloc(cmd_size);
     memset(command_str, 0, cmd_size);
-    sprintf(command_str, "workspace %s", workspace->name);
+    sprintf(command_str, "workspace \"%s\"", workspace->name);
 
     GError *ipc_err = NULL;
 

@@ -32,7 +32,7 @@ typedef struct {
 
 i3_workspaces_outputs_t get_outputs();
 
-void free_outputs();
+void free_outputs(i3_workspaces_outputs_t);
 
 const char* get_monitor_name_at(i3_workspaces_outputs_t outputs, int win_x, int win_y);
 
